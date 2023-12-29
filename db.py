@@ -9,8 +9,6 @@ import sqlite3
 # created_date
 # updated_date
 
-
-
 # UserPostTable
 # id (user key)
 # post_name (str)
