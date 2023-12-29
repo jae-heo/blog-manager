@@ -22,11 +22,6 @@ class DbManager:
     def __init__(self, path):
         self.con = sqlite3.connect(path)
         self.c = self.con.cursor()
-        sql_create_blog = "CREATE TABLE IF NOT EXISTS blog(id integer not null primary key autoincrement," \
-                          "USERNAME text not null, " \
-                          "COUNT_TREATED integer default 0 not null, " \
-                          "REQUESTED integer default 0 not null);"
-        self.c.execute(sql_create_blog)
 
         #UserTable 생성
         sql_user_table = """
