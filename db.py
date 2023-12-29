@@ -90,6 +90,20 @@ class DbManager:
 
         return found_user[0]
 
+    #테이블 출력 함수
+    def list_tables(self):
+        sql_list_tables = "SELECT name FROM sqlite_master WHERE type='table';"
+        self.c.execute(sql_list_tables)
+        tables = self.c.fetchall()
+
+        if not tables:
+            print("Table does not exist")
+        else:
+            print("Table list:")
+            for table in tables:
+                print(table[0])
+
+
     def close(self):
         self.con.close()
 
@@ -97,5 +111,9 @@ class DbManager:
 db_manager = DbManager('./test.db')
 
 # db_manager.create_user('Jae')
+
+#테이블 리스트 출력
+db_manager.list_tables()
+
 
 print(db_manager.get_user('Jae'))
