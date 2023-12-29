@@ -9,6 +9,8 @@ import sqlite3
 # created_date
 # updated_date
 
+
+
 # UserPostTable
 # id (user key)
 # post_name (str)
@@ -27,6 +29,36 @@ class DbManager:
                           "COUNT_TREATED integer default 0 not null, " \
                           "REQUESTED integer default 0 not null);"
         self.c.execute(sql_create_blog)
+
+        #UserTable 생성
+        sql_user_table = """
+                    CREATE TABLE IF NOT EXISTS UserTable (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        naver_id TEXT NOT NULL,
+                        comment_count INTEGER DEFAULT 0 NOT NULL,
+                        like_count INTEGER DEFAULT 0 NOT NULL,
+                        neighbor_request_date DATE,
+                        created_date DATE DEFAULT CURRENT_DATE NOT NULL,
+                        updated_date DATE DEFAULT CURRENT_DATE NOT NULL
+                    );
+                """
+        self.c.execute(sql_user_table)
+
+        # UserPostTable 생성
+        sql_user_post_table = """
+                    CREATE TABLE IF NOT EXISTS UserPostTable (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        post_name TEXT NOT NULL,
+                        post_body TEXT NOT NULL,
+                        written_comment TEXT,
+                        is_liked BOOLEAN,
+                        created_date DATE DEFAULT CURRENT_DATE NOT NULL,
+                        updated_date DATE DEFAULT CURRENT_DATE NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES UserTable(id)
+                    );
+                """
+        self.c.execute(sql_user_post_table)
 
     def create_user(self, username):
         sql_find_user = f'''SELECT * FROM blog where USERNAME=?'''
