@@ -14,6 +14,7 @@ from random import random
 
 # BlogPostTable
 # id (user key)
+# blog_post_id (str)
 # post_id (str)
 # post_name (str)
 # post_body (str)
@@ -45,28 +46,30 @@ class DbManager:
         sql_blog_post_table = """
                     CREATE TABLE IF NOT EXISTS BlogPostTable (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        blog_post_id TEXT NOT NULL,
                         post_id TEXT NOT NULL,
                         post_name TEXT NOT NULL,
                         post_body TEXT NOT NULL,
-                        written_comment TEXT,
-                        is_liked BOOLEAN,
+                        written_comment TEXT NOT NULL,
+                        is_liked BOOLEAN DEFAULT FALSE NOT NULL,
                         created_date DATE DEFAULT CURRENT_DATE NOT NULL,
                         updated_date DATE DEFAULT CURRENT_DATE NOT NULL
                     );
                 """
         self.c.execute(sql_blog_post_table)
 
+
+    # BlogTable 관련 함수
+    ############################################################################################
+
     # 특정 blog id의 정보를 삭제하는 코드
     def delete_blog(self, blog_id):
         # Delete the record from BlogTable
         sql_delete_blog = "DELETE FROM BlogTable WHERE blog_id = ?"
         self.c.execute(sql_delete_blog, (blog_id,))
-
-        # Delete related records from BlogPostTable (assuming there's a foreign key relationship)
-        sql_delete_blog_posts = "DELETE FROM BlogPostTable WHERE blog_id = ?"
+        # Delete the record from BlogPostTable
+        sql_delete_blog_posts = "DELETE FROM BlogPostTable WHERE blog_post_id = ?"
         self.c.execute(sql_delete_blog_posts, (blog_id,))
-
-        # Commit the changes to the database
         self.con.commit()
 
         print(f"이 Blog ID {blog_id} 의 정보는 삭제되었습니다.")
@@ -142,37 +145,38 @@ class DbManager:
         else:
             print(f"Blog ID: {blog_id}, Updated Date: {updated_date[0]}")
 
-    def create_user(self, username):
-        sql_find_user = f'''SELECT * FROM blog where USERNAME=?'''
-        self.c.execute(sql_find_user, (username,))
-        if len(self.c.fetchall()) != 0:
-            raise Exception("The user already exists")
+    ############################################################################################
 
-        sql_insert = f'''INSERT INTO blog (USERNAME) values (?)'''
-        self.c.execute(sql_insert, (username,))
-        self.con.commit()
+    # BlogPostTable 관련 함수
+    ############################################################################################
 
-    def get_user(self, username):
-        sql_find_user = f'''SELECT * FROM blog where USERNAME = ?'''
-        self.c.execute(sql_find_user, (username,))
-        found_user = self.c.fetchall()
-        if len(found_user) == 0:
-            raise Exception("The user does not exist")
-        if len(found_user) > 1:
-            raise Exception("The database scheme has an error. There is more than one user with the same username!")
+    # BlogPostTable의 post 정보 출력
+    def get_blog_post_details_by_blog_id(self, blog_id):
+        # Assuming there's a foreign key relationship between BlogTable and BlogPostTable
+        sql_get_post_details = """
+            SELECT post_id, post_name, post_body, written_comment,
+                   is_liked, created_date, updated_date
+            FROM BlogPostTable
+            WHERE blog_post_id = ?
+        """
 
-        return found_user[0]
+        self.c.execute(sql_get_post_details, (blog_id,))
+        post_details = self.c.fetchall()
 
-    def update_user(self, username, ):
-        sql_find_user = f'''SELECT * FROM blog where USERNAME = ?'''
-        self.c.execute(sql_find_user, (username,))
-        found_user = self.c.fetchall()
-        if len(found_user) == 0:
-            raise Exception("The user does not exist")
-        if len(found_user) > 1:
-            raise Exception("The database scheme has an error. There is more than one user with the same username!")
+        if not post_details:
+            print(f"No posts found for Blog ID: {blog_id}.")
+        else:
+            print(f"Posts for Blog ID: {blog_id}:")
+            for post in post_details:
+                post_id, post_name, post_body, written_comment, is_liked, created_date, updated_date = post
+                print(f"Post ID: {post_id}, Post Name: {post_name}, Post Body: {post_body}")
+                print(f"Written Comment: {written_comment}, is_liked: {is_liked}")
+                print(f"Created Date: {created_date}, Updated Date: {updated_date}")
+                print("\n")
 
-        return found_user[0]
+
+    ############################################################################################
+
 
     # 테이블 출력 함수
     def list_tables(self):
@@ -197,6 +201,3 @@ db_manager = DbManager('./test.db')
 
 # 테이블 리스트 출력
 db_manager.list_tables()
-
-print(db_manager.get_user('Jae'))
-db_manager.get_all_blog_ids()
