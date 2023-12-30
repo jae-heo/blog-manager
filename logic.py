@@ -1,8 +1,7 @@
-import time
 import pyperclip
-import random
 import logging
 from const import *
+from custom_func import *
 
 from selenium import webdriver
 from selenium.common import NoSuchElementException
@@ -11,123 +10,50 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 
-def search_in_blog(driver, search_keyword, neighbor_request_message):
-    driver.get(BLOG_MAIN_URL)
-    rand_sleep()
+def get_blogs_by_search(driver, search_keyword):
+    open_new_window(driver)
+    get_page(driver, BLOG_MAIN_URL)
 
-    pyperclip.copy(search_keyword)
-    driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/div/input').send_keys(
-        Keys.COMMAND + 'v')
-    rand_sleep()
-
-    driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/a[1]').click()
-    rand_sleep()
+    #블로그 검색창에 입력
+    search_bar_element = driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/div/input')
+    key_in(search_bar_element, search_keyword)
+    search_button_element = driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/a[1]')
+    click(search_button_element)
 
     while True:
+        # 검색결과의 페이지 별 순회
         for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
+            # 검색결과 내 Blog를 순회
             for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
-                # 새창 띄워서 작업해야함
-                blog_url = "https://m.blog.naver.com/" + author.get_attribute("href").split("/")[3]
-
-                driver.execute_script(f'window.open();')
-                rand_sleep()
-                driver.switch_to.window(driver.window_handles[-1])
-                driver.get(blog_url)
-                rand_sleep()
-
-                driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B").click()
-                rand_sleep()
-
-                try:
-                    both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
-
-                    # 만약 서이추가 가능한 사람일 경우
-                    if both_buddy_radio.get_attribute("ng-disabled") == "false":
-                        # 서이추 버튼 클릭
-                        both_buddy_radio.click()
-                        rand_sleep()
-                        # 서이추 메세지 입력
-                        driver.find_element(By.CSS_SELECTOR, ".add_msg textarea").clear()
-                        rand_sleep()
-
-                        pyperclip.copy(neighbor_request_message)
-                        driver.find_element(By.CSS_SELECTOR, ".add_msg textarea").send_keys(Keys.COMMAND + 'v')
-                        rand_sleep()
-
-                        driver.find_element(By.CLASS_NAME, "btn_ok").click()
-                        rand_sleep()
-                except NoSuchElementException as e:
-                    # 이경우는 이미 서이추가 되어있는 사람이라서 그냥 넘어가는 것으로..
-                    pass
-
-                # 이제 열었던 창을 닫아야 함.
-                driver.close()
-                driver.switch_to.window(driver.window_handles[-1])
+                blog_id = author.get_attribute("href").split("/")[3]
+                #########################################################
+                # 이곳에서 blog_id를 기존에 있는지 확인하고, 없으면 저장해준다.
+                #########################################################
 
             if i != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
-                driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1].click()
-                rand_sleep()
+                page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
+                click(page_next_number_button)
 
         try:
-            driver.find_element(By.CSS_SELECTOR, ".pagination .button_next").click()
-            rand_sleep()
+            page_next_button = driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
+            click(page_next_button)
         except NoSuchElementException as e:
             logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
             break
-
+ 
 
 def naver_login(driver, username, password):
-    login_url = "https://nid.naver.com/nidlogin.login?mode=form&url=https://www.naver.com/"
-    driver.get(login_url)
-    rand_sleep()
+    open_new_window(driver)
+    
+    get_page(driver, NAVER_LOGIN_URL)
 
-    driver.find_element(By.CSS_SELECTOR, '#id')  # 예외처리에 필요 이 구문이 없으면 아이디가 클립보드에 계속 복사됨
-    rand_sleep()
+    id_text_field = driver.find_element(By.CSS_SELECTOR, '#id')
+    key_in(id_text_field, username)
 
-    pyperclip.copy(username)
-    driver.find_element(By.CSS_SELECTOR, '#id').send_keys(Keys.COMMAND + 'v')
-    rand_sleep()
+    pw_text_field = driver.find_element(By.CSS_SELECTOR, '#pw')
+    key_in(pw_text_field, password)
 
-    pyperclip.copy(password)
-    driver.find_element(By.CSS_SELECTOR, '#pw').send_keys(Keys.COMMAND + 'v')
+    login_button = driver.find_element(By.XPATH, '//*[@id="log.login"]')
+    click(login_button)
 
-    rand_sleep()
-
-    driver.find_element(By.XPATH, '//*[@id="log.login"]').click()
-    rand_sleep()
-
-
-def dev_naver_login(driver):
-    login_url = "https://nid.naver.com/nidlogin.login?mode=form&url=https://www.naver.com/"
-    driver.get(login_url)
-    rand_sleep()
-
-    driver.find_element(By.CSS_SELECTOR, '#id')  # 예외처리에 필요 이 구문이 없으면 아이디가 클립보드에 계속 복사됨
-    rand_sleep()
-
-    pyperclip.copy("fuhafuha9")
-    driver.find_element(By.CSS_SELECTOR, '#id').send_keys(Keys.COMMAND + 'v')
-    rand_sleep()
-
-    pyperclip.copy("tofhdl19!")
-    driver.find_element(By.CSS_SELECTOR, '#pw').send_keys(Keys.COMMAND + 'v')
-
-    rand_sleep()
-
-    driver.find_element(By.XPATH, '//*[@id="log.login"]').click()
-    rand_sleep()
-
-
-def get_driver():
-    options = Options()
-    options.add_experimental_option("detach", True)
-    chrome_driver = webdriver.Chrome(options=options)
-    return chrome_driver
-
-
-def rand_sleep():
-    time.sleep(random.uniform(1.5, 2.5))
-
-
-def empty(s: str):
-    return True if len(s) == 0 else False
+    close_current_window(driver)
