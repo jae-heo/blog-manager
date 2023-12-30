@@ -53,3 +53,22 @@ def search_in_blog(driver, search_keyword, neighbor_request_message):
         except NoSuchElementException as e:
             logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
             break
+        
+
+# #주제별 보기 클릭
+# button = driver.find_element(By.CSS_SELECTOR, "a[bg-nclick='lnb.catergory']")
+# button.click()
+# rand_sleep()
+# # 엔터테인먼트 예술, 생활 노하우 쇼핑, 취미 여가 여행, 지식 동향 중 하나를 클릭해야함
+# buttons = driver.find_elements(By.CSS_SELECTOR, ".navigator_category .item")
+# button_list = []
+# # 각 버튼의 정보를 리스트에 추가
+# for button in buttons:
+#     button_text = button.find_element(By.CLASS_NAME, "category_name").text
+#     button_list.append({"text": button_text, "element": button})
+# # 리스트 출력 또는 활용
+# for button_info in button_list:
+#     print(f"버튼 텍스트: {button_info['text']}")
+# # button_list에서 텍스트를 돌면서 원하는 분야의 글을 선택한다.
+# button_list[1]["element"].click()
+# rand_sleep()
