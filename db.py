@@ -194,10 +194,6 @@ class DbManager:
     def close(self):
         self.con.close()
 
-
-db_manager = DbManager('./test.db')
-
-# db_manager.create_user('Jae')
-
-# 테이블 리스트 출력
-db_manager.list_tables()
+if __name__ == "__main__":
+    db_manager = DbManager('./test.db')
+    db_manager.list_tables()
