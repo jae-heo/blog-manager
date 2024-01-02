@@ -8,8 +8,6 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
-#db
-from db import DbManager
 
 def get_blogs_by_search(driver, search_keyword):
     open_new_window(driver)
@@ -28,10 +26,10 @@ def get_blogs_by_search(driver, search_keyword):
             for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
                 blog_id = author.get_attribute("href").split("/")[3]
                 #########################################################
-                DbManager.insert_blog_record_with_id(blog_id)
+                # 이곳에서 blog_id를 기존에 있는지 확인하고, 없으면 저장해준다.
                 #########################################################
 
-            if i != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
+            if (i + 1) != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
                 page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
                 click(page_next_number_button)
 
@@ -73,31 +71,32 @@ def get_blogs_by_category(driver, main_category, sub_category):
     )
     main_category_element.click()
     rand_sleep(300, 500)
-    sub_category_xpath = f"//a[contains(@bg-nclick, '{SUB_CATEGORIES[sub_category]}') and contains(@class, 'navigator_category_sub')]"
-    sub_category_element = driver.find_element(By.CSS_SELECTOR, f".navigator_category_sub [bg-nclick='{SUB_CATEGORIES[sub_category]}']")
-    # sub_category_element = WebDriverWait(driver, 1000).until(
-    #     EC.element_to_be_clickable((By.XPATH, sub_category_xpath))
-    # )
-    sub_category_element.click()
+    sub_category_element = WebDriverWait(driver, 1000).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, sub_category_element))
+    )
+    click(sub_category_element)
 
     while True:
         # 검색결과의 페이지 별 순회
-
-        print(len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")))
         for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
             # 검색결과 내 Blog를 순회
-            # for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
-            #     blog_id = author.get_attribute("href").split("/")[3]
-            rand_sleep()
-            
-            if i < len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
+            for post in driver.find_elements(By.CSS_SELECTOR, ".desc .desc_inner"):
+                post_link_splat = post.get_attribute("href").split("/")
+                blog_id = post_link_splat[3]
+                post_id = post_link_splat[4]
+                liked_link = f'https://m.blog.naver.com/SympathyHistoryList.naver?blogId={blog_id}&logNo={post_id}&categoryId=POST'
+                open_new_window(driver)
+                get_page(driver, liked_link)
+
+                
+
+
+            if (i + 1) < len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
                 page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
                 click(page_next_number_button)
-
         try:
             page_next_button = driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
             click(page_next_button)
         except NoSuchElementException as e:
             logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
             break
- 
