@@ -1,12 +1,11 @@
-import pyperclip
 import logging
 from const import *
 from custom_func import *
 
-from selenium import webdriver
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 
@@ -57,3 +56,46 @@ def naver_login(driver, username, password):
     click(login_button)
 
     close_current_window(driver)
+
+
+def get_blogs_by_category(driver, main_category, sub_category):
+    open_new_window(driver)
+    get_page(driver, BLOG_MAIN_URL)
+
+    category_discovery_button = driver.find_element(By.XPATH, '//*[@id="lnbMenu"]/a[2]')
+    click(category_discovery_button)
+
+    main_category_xpath = f"//a[contains(@bg-nclick, '{MAIN_CATEGORIES[main_category]}')]"
+    main_category_element = WebDriverWait(driver, 1000).until(
+        EC.element_to_be_clickable((By.XPATH, main_category_xpath))
+    )
+    main_category_element.click()
+    rand_sleep(300, 500)
+    sub_category_xpath = f"//a[contains(@bg-nclick, '{SUB_CATEGORIES[sub_category]}') and contains(@class, 'navigator_category_sub')]"
+    sub_category_element = driver.find_element(By.CSS_SELECTOR, f".navigator_category_sub [bg-nclick='{SUB_CATEGORIES[sub_category]}']")
+    # sub_category_element = WebDriverWait(driver, 1000).until(
+    #     EC.element_to_be_clickable((By.XPATH, sub_category_xpath))
+    # )
+    sub_category_element.click()
+
+    while True:
+        # 검색결과의 페이지 별 순회
+
+        print(len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")))
+        for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
+            # 검색결과 내 Blog를 순회
+            # for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
+            #     blog_id = author.get_attribute("href").split("/")[3]
+            rand_sleep()
+            
+            if i < len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
+                page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
+                click(page_next_number_button)
+
+        try:
+            page_next_button = driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
+            click(page_next_button)
+        except NoSuchElementException as e:
+            logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
+            break
+ 

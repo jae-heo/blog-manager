@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from const import *
 
-def rand_sleep():
+def rand_sleep(min = 1300, max = 2000):
     QTest.qWait(random.randint(1300, 2000))
 
 def empty(s: str):
