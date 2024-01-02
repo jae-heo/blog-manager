@@ -2,6 +2,8 @@ import random
 import time
 import pyperclip
 
+from PyQt5.QtCore import *
+from PyQt5.QtTest import *
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -10,7 +12,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from const import *
 
 def rand_sleep():
-    time.sleep(random.uniform(1.5, 2.5))
+    QTest.qWait(random.randint(1300, 2000))
 
 def empty(s: str):
     return True if len(s) == 0 else False
