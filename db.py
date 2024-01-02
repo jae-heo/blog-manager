@@ -74,14 +74,25 @@ class DbManager:
 
         print(f"이 Blog ID {blog_id} 의 정보는 삭제되었습니다.")
 
-    # BlogTable에 blog_id 저장하는 함수
+    # BlogTable에 blog_id 저장하는 함수, id 중복 확인하기 기능 추가하기
     def insert_blog_record_with_id(self, blog_id):
+        sql_check_duplicate = """
+            SELECT blog_id FROM BlogTable WHERE blog_id = ?;
+        """
+        self.c.execute(sql_check_duplicate, (blog_id,))
+        existing_blog = self.c.fetchone()
+
+        if existing_blog:
+            print(f"Blog with ID {blog_id} already exists. Skipping insertion.")
+            return
+
         sql_insert_blog = """
             INSERT INTO BlogTable (blog_id)
             VALUES (?);
         """
-        self.c.execute(sql_insert_blog, (blog_id))
+        self.c.execute(sql_insert_blog, (blog_id,))
         self.con.commit()
+        print(f"Blog with ID {blog_id} inserted successfully.")
 
     # Blogtable blog_id 전체 출력
     def get_all_blog_ids(self):

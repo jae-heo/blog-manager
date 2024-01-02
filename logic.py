@@ -9,6 +9,8 @@ from selenium.webdriver import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
+#db
+from db import DbManager
 
 def get_blogs_by_search(driver, search_keyword):
     open_new_window(driver)
@@ -27,7 +29,7 @@ def get_blogs_by_search(driver, search_keyword):
             for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
                 blog_id = author.get_attribute("href").split("/")[3]
                 #########################################################
-                # 이곳에서 blog_id를 기존에 있는지 확인하고, 없으면 저장해준다.
+                DbManager.insert_blog_record_with_id(blog_id)
                 #########################################################
 
             if i != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
