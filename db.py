@@ -1,5 +1,6 @@
 import sqlite3
 import string
+from datetime import datetime
 from random import random
 
 
@@ -9,6 +10,8 @@ from random import random
 # comment_count (int)
 # like_count (int)
 # neighbor_request_date (date) 일주일동안 안받으면 삭제하는 로직이 필요
+# neighbor_request_current (boolean)
+# neighbor_request_rmv (boolean) true = 삭제되었다.
 # created_date
 # updated_date
 
@@ -36,6 +39,8 @@ class DbManager:
                         comment_count INTEGER DEFAULT 0 NOT NULL,
                         like_count INTEGER DEFAULT 0 NOT NULL,
                         neighbor_request_date DATE,
+                        neighbor_request_current DEFAULT FALSE NOT NULL,
+                        neighbor_request_rmv DEFAULT FALSE NOT NULL,
                         created_date DATE DEFAULT CURRENT_DATE NOT NULL,
                         updated_date DATE DEFAULT CURRENT_DATE NOT NULL
                     );
@@ -115,6 +120,7 @@ class DbManager:
             print(f"No Comments found for Blog ID: {blog_id}.")
         else:
             print(f"Blog ID: {blog_id}, Comment Count: {comment_count[0]}")
+            return comment_count[0]
 
     # BlogTable의 like_counts 출력
     def get_blog_like_count(self, blog_id):
@@ -125,6 +131,7 @@ class DbManager:
             print(f"No Likes found for Blog ID: {blog_id}.")
         else:
             print(f"Blog ID: {blog_id}, Like Count: {like_count[0]}")
+            return like_count[0]
 
     # BlogTable의 neighbor_request_date 출력
     def get_blog_neighbor_request_date(self, blog_id):
@@ -135,6 +142,29 @@ class DbManager:
             print(f"No Neighbor Request Date found for Blog ID: {blog_id}.")
         else:
             print(f"Blog ID: {blog_id}, Neighbor Request Date: {neighbor_request_date[0]}")
+            return neighbor_request_date[0]
+
+    # BlogTable의 neighbor_request_current count 반환
+    def get_true_blog_neighbor_request_count(self):
+        sql_get_true_blog_neighbor_request_count = "SELECT COUNT(*) FROM BlogTable WHERE neighbor_request_current = ?"
+        # True인 경우만 count
+        true_count = 0
+        self.c.execute(sql_get_true_blog_neighbor_request_count, (True,))
+        true_count += self.c.fetchone()[0]
+
+        return true_count
+
+    # BlogTable의 neighbor_request_current 반환
+    def get_blog_neighbor_request_current(self, blog_id):
+        sql_get_blog_neighbor_request_current = "SELECT neighbor_request_current FROM BlogTable WHERE blog_id = ?"
+        self.c.execute(sql_get_blog_neighbor_request_current, (blog_id,))
+        result = self.c.fetchone()
+
+        if result:
+            return result[0]  # neighbor_request_current의 값 반환 (True 또는 False)
+        else:
+            return None  # blog_id에 해당하는 레코드가 없을 경우 None 반환
+
 
     # BlogTable의 created_date 출력
     def get_blog_created_date(self, blog_id):
@@ -155,6 +185,49 @@ class DbManager:
             print(f"No Updated Date found for Blog ID: {blog_id}.")
         else:
             print(f"Blog ID: {blog_id}, Updated Date: {updated_date[0]}")
+
+
+    #BlogTable의 neighbor_request_date 업데이트
+    def update_neighbor_request_date(self, blog_id, current_date):
+        if not isinstance(current_date, str):
+            print("잘못된 current_date 형식입니다. 날짜 문자열을 입력하세요.")
+            return
+
+        # neighbor_request_date를 주어진 current_date 값으로 업데이트
+        sql_update_date = "UPDATE BlogTable SET neighbor_request_date = ? WHERE blog_id = ?"
+        self.c.execute(sql_update_date, (current_date, blog_id))
+        self.con.commit()
+
+        print(f"Blog ID {blog_id}에 대한 이웃 요청 날짜가 {current_date}로 업데이트되었습니다.")
+
+    # BlogTable의 neighbor_request_current 업데이트
+    def update_neighbor_request_current(self, blog_id, neighbor_request_status):
+        if neighbor_request_status not in [True, False]:
+            print("잘못된 neighbor_request_status입니다. True 또는 False를 입력하세요.")
+            return
+
+        # neighbor_request_current를 주어진 neighbor_request_status 값으로 업데이트
+        sql_update_current = "UPDATE BlogTable SET neighbor_request_current = ? WHERE blog_id = ?"
+        self.c.execute(sql_update_current, (neighbor_request_status, blog_id))
+        self.con.commit()
+
+        print(f"Blog ID {blog_id}에 대한 이웃 요청 상태가 {neighbor_request_status}로 업데이트되었습니다.")
+
+
+    def update_neighbor_request_rmv(self, blog_id, neighbor_request_status):
+        if neighbor_request_status not in [True, False]:
+            print("잘못된 neighbor_request_status입니다. True 또는 False를 입력하세요.")
+            return
+
+        # neighbor_request_rmv를 주어진 neighbor_request_status 값으로 업데이트
+        sql_update_current = "UPDATE BlogTable SET neighbor_request_rmv = ? WHERE blog_id = ?"
+        self.c.execute(sql_update_current, (neighbor_request_status, blog_id))
+        self.con.commit()
+
+        print(f"Blog ID {blog_id}에 대한 이웃 요청 삭제 현황 상태가 {neighbor_request_status}로 업데이트되었습니다.")
+
+
+
 
     ############################################################################################
 

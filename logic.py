@@ -8,8 +8,11 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
+from db import DbManager
+from datetime import datetime, timedelta
 
 def get_blogs_by_search(driver, search_keyword):
+    db_instance = DbManager()
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)
 
@@ -26,7 +29,7 @@ def get_blogs_by_search(driver, search_keyword):
             for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
                 blog_id = author.get_attribute("href").split("/")[3]
                 #########################################################
-                # 이곳에서 blog_id를 기존에 있는지 확인하고, 없으면 저장해준다.
+                db_instance.insert_blog_record_with_id(blog_id)
                 #########################################################
 
             if (i + 1) != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
@@ -100,3 +103,31 @@ def get_blogs_by_category(driver, main_category, sub_category):
         except NoSuchElementException as e:
             logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
             break
+
+def neighbor_request_logic():
+    db_instance = DbManager()
+    all_blog_ids = db_instance.get_all_blog_ids()
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    for blog_id in all_blog_ids:
+        neighbor_request_status = db_instance.get_blog_neighbor_request_current(blog_id)
+        if not neighbor_request_status:
+            like_count = db_instance.get_blog_like_count(blog_id)
+            comment_count = db_instance.get_blog_comment_count(blog_id)
+
+            if like_count >= 5 and comment_count >= 5:
+                # Update neighbor_request_date in sql_blog_table to today's date
+                db_instance.update_neighbor_request_date(blog_id, today_date)
+
+        else:
+            neighbor_request_date = db_instance.get_blog_neighbor_request_date(blog_id)
+            if (today_date - neighbor_request_date).days > 7:
+                # Update neighbor_request_current to False
+                db_instance.update_neighbor_request_current(blog_id, False)
+                db_instance.update_neighbor_request_rmv(blog_id, True)
+
+            else:
+                continue
+
+
+
+
