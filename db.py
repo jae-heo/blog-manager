@@ -317,7 +317,7 @@ class DbManager:
     def close(self):
         self.con.close()
 
-       # Blogtable blog_id 전체 출력
+    # Blogtable blog_id 전체 출력
     def get_all_blogs(self):
         self.c.execute("PRAGMA table_info(BlogTable)")
         columns = [column[1] for column in self.c.fetchall()]
@@ -329,6 +329,20 @@ class DbManager:
             print("BlogTable이 비었습니다.")
         else:
             result = [dict(zip(columns, blog)) for blog in blogs]
+            return result
+
+    # BlogPosttable blog_id 전체 출력
+    def get_all_blog_posts(self):
+        self.c.execute("PRAGMA table_info(BlogPostTable)")
+        columns = [column[1] for column in self.c.fetchall()]
+
+        self.c.execute("SELECT * FROM BlogPostTable")
+        posts = self.c.fetchall()
+
+        if not posts:
+            print("BlogPostTable이 비었습니다.")
+        else:
+            result = [dict(zip(columns, post)) for post in posts]
             return result
         
     def update_blog(self, blog):
@@ -357,6 +371,37 @@ class DbManager:
             blog['created_date'],
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             blog['id']
+        ))
+        self.con.commit()
+
+
+    def update_post(self, post):
+
+        sql_query = """
+            UPDATE BlogPostTable
+            SET
+                blog_post_id = ?,
+                post_id = ?,
+                post_name = ?,
+                post_body = ?,
+                written_comment = ?,
+                is_liked = ?,
+                created_date = ?,
+                updated_date = ?
+            WHERE
+                id = ?
+        """
+
+        self.c.execute(sql_query, (
+            post['blog_post_id'],
+            post['post_id'],
+            post['post_name'],
+            post['post_body'],
+            post['written_comment'],
+            post['is_liked'],
+            post['created_date'],
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            post['id']
         ))
         self.con.commit()
 
