@@ -144,10 +144,9 @@ def get_blogs_by_category(driver, main_category, sub_category):
 
 def neighbor_request_logic(driver):
     db_instance = DbManager()
-
-
     all_blogs = db_instance.get_all_blogs()
     all_posts = db_instance.get_all_blog_posts()
+
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     for blog in all_blogs:
         if not blog["neighbor_request_current"]:
@@ -160,44 +159,55 @@ def neighbor_request_logic(driver):
                 db_instance.update_blog(blog)
 
             else:
-                while True:
-                    # 블로그로 이동
-                    blog_url = f"https://m.blog.naver.com/{blog['blog_id']}/"
+
+                filtered_posts = [
+                    post for post in all_posts
+                    if post.get("blog_post_id") == blog
+                       and not post.get("is_liked")
+                       and not post.get("written_comment")
+                ]
+
+                for post in filtered_posts:
+                    blog_url = f"https://m.blog.naver.com/{blog['blog_id']}/{post['post_id']}"
                     get_page(driver, blog_url)
 
-                    # 좋아요 버튼 확인
+                # 좋아요 버튼 확인
+                rand_sleep(450, 550)
+                try:
+                    is_like = driver.find_element(by='xpath',
+                                                  value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
+                        'aria-pressed')  # 좋아요 버튼 상태 확인
+                    # print(is_like)
+                except Exception:  # 간혹 공감 버튼 자체가 없는 게시글이 존재함
+                    print('공감 버튼 없음')
+                    continue
+                if is_like == 'false':  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
+                    driver.find_element(by='xpath',
+                                        value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
                     rand_sleep(450, 550)
-                    try:
-                        is_like = driver.find_element(by='xpath',
-                                                      value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
-                            'aria-pressed')  # 좋아요 버튼 상태 확인
-                        # print(is_like)
-                    except Exception:  # 간혹 공감 버튼 자체가 없는 게시글이 존재함
-                        print('공감 버튼 없음')
-                        continue
-                    if is_like == 'false':  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
-                        driver.find_element(by='xpath',
-                                            value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
-                        rand_sleep(450, 550)
-                    try:
-                        rand_sleep(950, 1050)
-                        alert = Alert(driver)  # 팝업창으로 메시지 뜰 경우를 대비
-                        alert.accept()
-                    except Exception:
-                        continue
+                    blog['like_count'] += 1
+                    post['is_liked'] = True
+                try:
+                    rand_sleep(950, 1050)
+                    alert = Alert(driver)  # 팝업창으로 메시지 뜰 경우를 대비
+                    alert.accept()
+                except Exception:
+                    continue
 
-                    # 댓글 확인
-                    comment_section = driver.find_element(By.CSS_SELECTOR, '.area_comment .reply_area')
-                    if 'hidden' in comment_section.get_attribute('class'):
-                        # 댓글 섹션이 감춰져 있으면 펼치기
-                        driver.execute_script("arguments[0].classList.remove('hidden')", comment_section)
-                    # 댓글 입력
-                    comment_input = driver.find_element(By.CSS_SELECTOR, '.reply_write textarea')
-                    comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
-                    comment_input.send_keys(Keys.RETURN)
-                    print(f"블로그 {blog['blog_id']}에 댓글을 작성했습니다.")
-                    blog['comment_count'] += 1
-                    db_instance.update_blog(blog)
+                # 댓글 확인
+                comment_section = driver.find_element(By.CSS_SELECTOR, '.area_comment .reply_area')
+                if 'hidden' in comment_section.get_attribute('class'):
+                    # 댓글 섹션이 감춰져 있으면 펼치기
+                    driver.execute_script("arguments[0].classList.remove('hidden')", comment_section)
+                # 댓글 입력
+                comment_input = driver.find_element(By.CSS_SELECTOR, '.reply_write textarea')
+                comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
+                comment_input.send_keys(Keys.RETURN)
+                print(f"블로그 {blog['blog_id']}에 댓글을 작성했습니다.")
+                blog['comment_count'] += 1
+                post['written_comment'] = comment_input.get_attribute('좋은 글 감사합니다!')
+                db_instance.update_blog(blog)
+                db_instance.update_post(post)
         else:
             if (now - blog["neighbor_request_date"]).days > 7:
                 # Update neighbor_request_current to False
@@ -208,5 +218,21 @@ def neighbor_request_logic(driver):
                 continue
 
 
+def get_latest_post_url(driver, blog_url, current_xpath):
+    # Navigate to the provided blog URL
+    driver.get(blog_url)
 
+    # Use WebDriverWait to wait for the elements to be present
+    wait = WebDriverWait(driver, 10)
 
+    # Find the latest post element using the provided XPath
+    latest_post = wait.until(EC.presence_of_element_located((By.XPATH, current_xpath)))
+
+    # Extract the URL of the latest post
+    latest_post_url = latest_post.find_element(By.TAG_NAME, "a").get_attribute("href")
+
+    # Construct XPath for the next post by increasing the index
+    next_post_index = int(current_xpath.split('/')[-1][:-1]) + 1
+    next_post_xpath = current_xpath.replace(f'li[{next_post_index - 1}]', f'li[{next_post_index}]')
+
+    return latest_post_url, next_post_xpath
