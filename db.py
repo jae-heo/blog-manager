@@ -1,7 +1,5 @@
 import sqlite3
-import string
 from datetime import datetime
-from random import random
 
 
 # BlogTable
@@ -27,7 +25,7 @@ from random import random
 # updated_date
 
 class DbManager:
-    def __init__(self, path):
+    def __init__(self, path = "./test.db"):
         self.con = sqlite3.connect(path)
         self.c = self.con.cursor()
 
@@ -62,7 +60,6 @@ class DbManager:
                     );
                 """
         self.c.execute(sql_blog_post_table)
-
 
     # BlogTable 관련 함수
     ############################################################################################
@@ -111,7 +108,7 @@ class DbManager:
             for blog_id in blog_ids:
                 print(blog_id[0])
 
- 
+
     # BlogTable의 comment_counts 출력
     def get_blog_comment_count(self, blog_id):
         sql_get_blog_comment_count = "SELECT comment_count FROM BlogTable WHERE blog_id = ?"
@@ -361,11 +358,11 @@ class DbManager:
         self.con.commit()
 
 if __name__ == "__main__":
-    db_manager = DbManager('./test.db')
+    db_manager = DbManager()
     # db_manager.list_tables()
-    db_manager.insert_blog_record_with_id("test1")
-    db_manager.insert_blog_record_with_id("test2")
-    db_manager.insert_blog_record_with_id("test3")
+    # db_manager.insert_blog_record_with_id("test1")
+    # db_manager.insert_blog_record_with_id("test2")
+    # db_manager.insert_blog_record_with_id("test3")
     # blog = db_manager.get_all_blogs()[0]
     # blog["blog_id"] = "modified ha ha"
     # blog["comment_count"] = 20
