@@ -1,4 +1,7 @@
 import logging
+
+from selenium.webdriver.common.alert import Alert
+
 from const import *
 from custom_func import *
 
@@ -104,7 +107,7 @@ def get_blogs_by_category(driver, main_category, sub_category):
             logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
             break
 
-def neighbor_request_logic():
+def neighbor_request_logic(driver):
     db_instance = DbManager()
     all_blog_ids = db_instance.get_all_blog_ids()
     today_date = datetime.now().strftime('%Y-%m-%d')
@@ -115,8 +118,51 @@ def neighbor_request_logic():
             comment_count = db_instance.get_blog_comment_count(blog_id)
 
             if like_count >= 5 and comment_count >= 5:
+                ######
+                #서로이웃 신청 코드 작성하기
+                ######
+
                 # Update neighbor_request_date in sql_blog_table to today's date
                 db_instance.update_neighbor_request_date(blog_id, today_date)
+
+            else:
+                # 블로그로 이동
+                blog_url = f"https://m.blog.naver.com/{blog_id}"
+                get_page(driver, blog_url)
+
+                # 좋아요 버튼 확인
+                time.sleep(0.5)
+                try:
+                    is_like = driver.find_element(by='xpath',
+                                                  value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
+                        'aria-pressed')  # 좋아요 버튼 상태 확인
+                    # print(is_like)
+                except Exception:  # 간혹 공감 버튼 자체가 없는 게시글이 존재함
+                    print('공감 버튼 없음')
+                    continue
+                if is_like == 'false':  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
+                    driver.find_element(by='xpath',
+                                        value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
+                    time.sleep(0.5)
+                try:
+                    time.sleep(1)
+                    alert = Alert(driver)  # 팝업창으로 메시지 뜰 경우를 대비
+                    alert.accept()
+                except Exception:
+                    continue
+
+                # 댓글 확인
+                comment_section = driver.find_element(By.CSS_SELECTOR, '.area_comment .reply_area')
+                if 'hidden' in comment_section.get_attribute('class'):
+                    # 댓글 섹션이 감춰져 있으면 펼치기
+                    driver.execute_script("arguments[0].classList.remove('hidden')", comment_section)
+
+                # 댓글 입력
+                comment_input = driver.find_element(By.CSS_SELECTOR, '.reply_write textarea')
+                comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
+                comment_input.send_keys(Keys.RETURN)
+                print(f"블로그 {blog_id}에 댓글을 작성했습니다.")
+                db_instance.update_comment_count(blog_id)
 
         else:
             neighbor_request_date = db_instance.get_blog_neighbor_request_date(blog_id)

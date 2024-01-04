@@ -214,6 +214,7 @@ class DbManager:
         print(f"Blog ID {blog_id}에 대한 이웃 요청 상태가 {neighbor_request_status}로 업데이트되었습니다.")
 
 
+    #이웃 신청 삭제 확인
     def update_neighbor_request_rmv(self, blog_id, neighbor_request_status):
         if neighbor_request_status not in [True, False]:
             print("잘못된 neighbor_request_status입니다. True 또는 False를 입력하세요.")
@@ -227,7 +228,33 @@ class DbManager:
         print(f"Blog ID {blog_id}에 대한 이웃 요청 삭제 현황 상태가 {neighbor_request_status}로 업데이트되었습니다.")
 
 
+    #like count 증가
+    def update_like_count(self, blog_id):
+        sql_get_blog_like_count = "SELECT like_count FROM BlogTable WHERE blog_id = ?"
+        self.c.execute(sql_get_blog_like_count, (blog_id,))
+        current_like_count = self.c.fetchone()
 
+        updated_like_count = current_like_count[0] + 1
+        print(f"Blog ID: {blog_id}, Updated Like Count: {updated_like_count}")
+
+        # 추가된 부분: like_count를 1 증가시켜 업데이트
+        sql_update_like_count = "UPDATE BlogTable SET like_count = ? WHERE blog_id = ?"
+        self.c.execute(sql_update_like_count, (updated_like_count, blog_id))
+        self.con.commit()
+
+    # like count 증가
+    def update_comment_count(self, blog_id):
+        sql_get_blog_comment_count = "SELECT comment_count FROM BlogTable WHERE blog_id = ?"
+        self.c.execute(sql_get_blog_comment_count, (blog_id,))
+        current_comment_count = self.c.fetchone()
+
+        updated_comment_count = current_comment_count[0] + 1
+        print(f"Blog ID: {blog_id}, Updated Like Count: {updated_comment_count}")
+
+        # 추가된 부분: comment_count를 1 증가시켜 업데이트
+        sql_update_comment_count = "UPDATE BlogTable SET comment_count = ? WHERE blog_id = ?"
+        self.c.execute(sql_update_comment_count, (updated_comment_count, blog_id))
+        self.con.commit()
 
     ############################################################################################
 
