@@ -14,6 +14,8 @@ from selenium.webdriver.common.by import By
 from db import DbManager
 from datetime import datetime, timedelta
 
+# 블로그 추가하려면 서이추가 가능한 사람만 추가하기..
+
 def get_blogs_by_search(driver, search_keyword):
     db_instance = DbManager()
     open_new_window(driver)
@@ -110,11 +112,9 @@ def get_blogs_by_category(driver, main_category, sub_category):
 def neighbor_request_logic(driver):
     db_instance = DbManager()
 
-    # 재영
-    # 모든 블로그 아이디를 찾는 부분은, blog 의 모든 정보를 메모리에 올려도 될 것 같음
-    # DB 를 여러번 접근하면 시간적으로 
+
     all_blogs = db_instance.get_all_blogs()
-    today_date = datetime.now().strftime('%Y-%m-%d')
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     for blog in all_blogs:
         if not blog["neighbor_request_current"]:
             if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
@@ -122,7 +122,7 @@ def neighbor_request_logic(driver):
                 #서로이웃 신청 코드 작성하기
                 ######
                 # Update neighbor_request_date in sql_blog_table to today's date
-                blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                blog["neighbor_request_date"] = now
                 db_instance.update_blog(blog)
 
             else:
@@ -131,7 +131,7 @@ def neighbor_request_logic(driver):
                 get_page(driver, blog_url)
 
                 # 좋아요 버튼 확인
-                time.sleep(0.5)
+                rand_sleep(450, 550)
                 try:
                     is_like = driver.find_element(by='xpath',
                                                   value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
@@ -143,9 +143,9 @@ def neighbor_request_logic(driver):
                 if is_like == 'false':  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
                     driver.find_element(by='xpath',
                                         value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
-                    time.sleep(0.5)
+                    rand_sleep(450, 550)
                 try:
-                    time.sleep(1)
+                    rand_sleep(950, 1050)
                     alert = Alert(driver)  # 팝업창으로 메시지 뜰 경우를 대비
                     alert.accept()
                 except Exception:
@@ -164,7 +164,7 @@ def neighbor_request_logic(driver):
                 blog['comment_count'] += 1
                 db_instance.update_blog(blog)
         else:
-            if (today_date - blog["neighbor_request_date"]).days > 7:
+            if (now - blog["neighbor_request_date"]).days > 7:
                 # Update neighbor_request_current to False
                 blog["neighbor_request_current"] = 0
                 blog["neighbor_request_rmv"] = 1
