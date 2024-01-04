@@ -131,7 +131,7 @@ def neighbor_request_logic(driver):
                 get_page(driver, blog_url)
 
                 # 좋아요 버튼 확인
-                time.sleep(0.5)
+                rand_sleep(450, 550)
                 try:
                     is_like = driver.find_element(by='xpath',
                                                   value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
@@ -143,9 +143,9 @@ def neighbor_request_logic(driver):
                 if is_like == 'false':  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
                     driver.find_element(by='xpath',
                                         value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
-                    time.sleep(0.5)
+                    rand_sleep(450, 550)
                 try:
-                    time.sleep(1)
+                    rand_sleep(950, 1050)
                     alert = Alert(driver)  # 팝업창으로 메시지 뜰 경우를 대비
                     alert.accept()
                 except Exception:
