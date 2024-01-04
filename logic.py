@@ -12,9 +12,25 @@ from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
 from db import DbManager
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # 블로그 추가하려면 서이추가 가능한 사람만 추가하기..
+def naver_login(driver, username, password):
+    open_new_window(driver)
+    
+    get_page(driver, NAVER_LOGIN_URL)
+
+    id_text_field = driver.find_element(By.CSS_SELECTOR, '#id')
+    key_in(id_text_field, username)
+
+    pw_text_field = driver.find_element(By.CSS_SELECTOR, '#pw')
+    key_in(pw_text_field, password)
+
+    login_button = driver.find_element(By.XPATH, '//*[@id="log.login"]')
+    click(login_button)
+
+    close_current_window(driver)
+
 
 def get_blogs_by_search(driver, search_keyword):
     db_instance = DbManager()
@@ -33,40 +49,37 @@ def get_blogs_by_search(driver, search_keyword):
             # 검색결과 내 Blog를 순회
             for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
                 blog_id = author.get_attribute("href").split("/")[3]
-                #########################################################
-                db_instance.insert_blog_record_with_id(blog_id)
-                #########################################################
+                # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
+                blog_url = "https://m.blog.naver.com/" + blog_id
+                open_new_window(driver)
+                get_page(driver, blog_url)
+                try:
+                    add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                    click(add_neighbor_button)
+                    both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
+                    # 만약 서이추가 가능한 사람일 경우
+                    if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                        db_instance.insert_blog_record_with_id(blog_id)
+                except Exception as e:
+                    # 이 경우는 이미 이웃
+                    pass
+
+                # 이제 열었던 창을 닫아야 함.
+                close_current_window(driver)
 
             if (i + 1) != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
                 page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
                 click(page_next_number_button)
-
         try:
             page_next_button = driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
             click(page_next_button)
         except NoSuchElementException as e:
             logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
             break
- 
-
-def naver_login(driver, username, password):
-    open_new_window(driver)
-    
-    get_page(driver, NAVER_LOGIN_URL)
-
-    id_text_field = driver.find_element(By.CSS_SELECTOR, '#id')
-    key_in(id_text_field, username)
-
-    pw_text_field = driver.find_element(By.CSS_SELECTOR, '#pw')
-    key_in(pw_text_field, password)
-
-    login_button = driver.find_element(By.XPATH, '//*[@id="log.login"]')
-    click(login_button)
-
-    close_current_window(driver)
 
 
 def get_blogs_by_category(driver, main_category, sub_category):
+    db_instance = DbManager()
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)
 
@@ -79,8 +92,9 @@ def get_blogs_by_category(driver, main_category, sub_category):
     )
     main_category_element.click()
     rand_sleep(300, 500)
+    sub_category_css_selector = f".navigator_category_sub [bg-nclick='{SUB_CATEGORIES[sub_category]}']"
     sub_category_element = WebDriverWait(driver, 1000).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, sub_category_element))
+        EC.element_to_be_clickable((By.CSS_SELECTOR, sub_category_css_selector))
     )
     click(sub_category_element)
 
@@ -88,17 +102,36 @@ def get_blogs_by_category(driver, main_category, sub_category):
         # 검색결과의 페이지 별 순회
         for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
             # 검색결과 내 Blog를 순회
-            for post in driver.find_elements(By.CSS_SELECTOR, ".desc .desc_inner"):
+            for post_index in range(len(driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
+                post = driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[post_index]
                 post_link_splat = post.get_attribute("href").split("/")
                 blog_id = post_link_splat[3]
                 post_id = post_link_splat[4]
                 liked_link = f'https://m.blog.naver.com/SympathyHistoryList.naver?blogId={blog_id}&logNo={post_id}&categoryId=POST'
                 open_new_window(driver)
                 get_page(driver, liked_link)
+                rand_sleep(3000, 5000)
+                for blog_description in driver.find_elements(By.CSS_SELECTOR, ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
+                    blog_id = blog_description.get_attribute("href").split("/")[3]
+                    # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
+                    blog_url = "https://m.blog.naver.com/" + blog_id
+                    open_new_window(driver)
+                    get_page(driver, blog_url)
+                    try:
+                        add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                        click(add_neighbor_button)
+                        both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
+                        # 만약 서이추가 가능한 사람일 경우
+                        if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                            db_instance.insert_blog_record_with_id(blog_id)
+                    except Exception as e:
+                        # 이 경우는 이미 이웃
+                        pass
+                    # 서로이웃 확인했던 창 끄기.
+                    close_current_window(driver)
 
-                
-
-
+                # 포스트 공감창 끄기
+                close_current_window(driver)
             if (i + 1) < len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
                 page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
                 click(page_next_number_button)
