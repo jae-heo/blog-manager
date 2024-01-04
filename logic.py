@@ -127,7 +127,7 @@ def neighbor_request_logic(driver):
 
             else:
                 # 블로그로 이동
-                blog_url = f"https://m.blog.naver.com/{blog_id}"
+                blog_url = f"https://m.blog.naver.com/{blog_id}/"
                 get_page(driver, blog_url)
 
                 # 좋아요 버튼 확인

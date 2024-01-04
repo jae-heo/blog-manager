@@ -262,6 +262,17 @@ class DbManager:
     ############################################################################################
 
     # BlogPostTable의 post 정보 출력
+
+    def get_post_id(self, blog_id):
+        sql_get_post_details = """
+                    SELECT post_id
+                    FROM BlogPostTable
+                    WHERE blog_post_id = ?
+                """
+
+        self.c.execute(sql_get_post_details, (blog_id,))
+        post_details = self.c.fetchall()
+
     def get_blog_post_details_by_blog_id(self, blog_id):
         # Assuming there's a foreign key relationship between BlogTable and BlogPostTable
         sql_get_post_details = """
