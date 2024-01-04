@@ -109,25 +109,25 @@ def get_blogs_by_category(driver, main_category, sub_category):
 
 def neighbor_request_logic(driver):
     db_instance = DbManager()
-    all_blog_ids = db_instance.get_all_blog_ids()
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    for blog_id in all_blog_ids:
-        neighbor_request_status = db_instance.get_blog_neighbor_request_current(blog_id)
-        if not neighbor_request_status:
-            like_count = db_instance.get_blog_like_count(blog_id)
-            comment_count = db_instance.get_blog_comment_count(blog_id)
 
-            if like_count >= 5 and comment_count >= 5:
+    # 재영
+    # 모든 블로그 아이디를 찾는 부분은, blog 의 모든 정보를 메모리에 올려도 될 것 같음
+    # DB 를 여러번 접근하면 시간적으로 
+    all_blogs = db_instance.get_all_blogs()
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    for blog in all_blogs:
+        if not blog["neighbor_request_current"]:
+            if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
                 ######
                 #서로이웃 신청 코드 작성하기
                 ######
-
                 # Update neighbor_request_date in sql_blog_table to today's date
-                db_instance.update_neighbor_request_date(blog_id, today_date)
+                blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                db_instance.update_blog(blog)
 
             else:
                 # 블로그로 이동
-                blog_url = f"https://m.blog.naver.com/{blog_id}/"
+                blog_url = f"https://m.blog.naver.com/{blog['blog_id']}/"
                 get_page(driver, blog_url)
 
                 # 좋아요 버튼 확인
@@ -156,21 +156,19 @@ def neighbor_request_logic(driver):
                 if 'hidden' in comment_section.get_attribute('class'):
                     # 댓글 섹션이 감춰져 있으면 펼치기
                     driver.execute_script("arguments[0].classList.remove('hidden')", comment_section)
-
                 # 댓글 입력
                 comment_input = driver.find_element(By.CSS_SELECTOR, '.reply_write textarea')
                 comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
                 comment_input.send_keys(Keys.RETURN)
-                print(f"블로그 {blog_id}에 댓글을 작성했습니다.")
-                db_instance.update_comment_count(blog_id)
-
+                print(f"블로그 {blog['blog_id']}에 댓글을 작성했습니다.")
+                blog['comment_count'] += 1
+                db_instance.update_blog(blog)
         else:
-            neighbor_request_date = db_instance.get_blog_neighbor_request_date(blog_id)
-            if (today_date - neighbor_request_date).days > 7:
+            if (today_date - blog["neighbor_request_date"]).days > 7:
                 # Update neighbor_request_current to False
-                db_instance.update_neighbor_request_current(blog_id, False)
-                db_instance.update_neighbor_request_rmv(blog_id, True)
-
+                blog["neighbor_request_current"] = 0
+                blog["neighbor_request_rmv"] = 1
+                db_instance.update_blog(blog)
             else:
                 continue
 

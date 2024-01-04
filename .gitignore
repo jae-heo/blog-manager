@@ -178,3 +178,5 @@ pyrightconfig.json
 *.db
 
 *.pyc
+
+jae-env/

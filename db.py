@@ -41,8 +41,8 @@ class DbManager:
                         neighbor_request_date DATE,
                         neighbor_request_current DEFAULT FALSE NOT NULL,
                         neighbor_request_rmv DEFAULT FALSE NOT NULL,
-                        created_date DATE DEFAULT CURRENT_DATE NOT NULL,
-                        updated_date DATE DEFAULT CURRENT_DATE NOT NULL
+                        created_date DATE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                        updated_date DATE DEFAULT CURRENT_TIMESTAMP NOT NULL
                     );
                 """
         self.c.execute(sql_blog_table)
@@ -111,6 +111,7 @@ class DbManager:
             for blog_id in blog_ids:
                 print(blog_id[0])
 
+ 
     # BlogTable의 comment_counts 출력
     def get_blog_comment_count(self, blog_id):
         sql_get_blog_comment_count = "SELECT comment_count FROM BlogTable WHERE blog_id = ?"
@@ -316,6 +317,58 @@ class DbManager:
     def close(self):
         self.con.close()
 
+       # Blogtable blog_id 전체 출력
+    def get_all_blogs(self):
+        self.c.execute("PRAGMA table_info(BlogTable)")
+        columns = [column[1] for column in self.c.fetchall()]
+
+        self.c.execute("SELECT * FROM BlogTable")
+        blogs = self.c.fetchall()
+
+        if not blogs:
+            print("BlogTable이 비었습니다.")
+        else:
+            result = [dict(zip(columns, blog)) for blog in blogs]
+            return result
+        
+    def update_blog(self, blog):
+        sql_query = """
+            UPDATE BlogTable
+            SET
+                blog_id = ?,
+                comment_count = ?,
+                like_count = ?,
+                neighbor_request_date = ?,
+                neighbor_request_current = ?,
+                neighbor_request_rmv = ?,
+                created_date = ?,
+                updated_date = ?
+            WHERE
+                id = ?
+        """
+
+        self.c.execute(sql_query, (
+            blog['blog_id'],
+            blog['comment_count'],
+            blog['like_count'],
+            blog['neighbor_request_date'],
+            blog['neighbor_request_current'],
+            blog['neighbor_request_rmv'],
+            blog['created_date'],
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            blog['id']
+        ))
+        self.con.commit()
+
 if __name__ == "__main__":
     db_manager = DbManager('./test.db')
-    db_manager.list_tables()
+    # db_manager.list_tables()
+
+    blog = db_manager.get_all_blogs()[0]
+    blog["blog_id"] = "modified ha ha"
+    blog["comment_count"] = 20
+    blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    blog["neighbor_request_current"] = 99
+    db_manager.update_blog(blog)
+
+    print(db_manager.get_all_blogs())
