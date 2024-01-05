@@ -26,24 +26,24 @@
    <string>heway_proto</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="run_button">
+   <widget class="QPushButton" name="login_button">
     <property name="geometry">
      <rect>
-      <x>610</x>
-      <y>520</y>
+      <x>270</x>
+      <y>30</y>
       <width>75</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>실행</string>
+     <string>로그인</string>
     </property>
    </widget>
    <widget class="QPushButton" name="stop_button">
     <property name="geometry">
      <rect>
-      <x>700</x>
-      <y>520</y>
+      <x>710</x>
+      <y>510</y>
       <width>75</width>
       <height>31</height>
      </rect>
@@ -56,7 +56,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>50</y>
+      <y>20</y>
       <width>71</width>
       <height>16</height>
      </rect>
@@ -69,7 +69,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>80</y>
+      <y>50</y>
       <width>71</width>
       <height>16</height>
      </rect>
@@ -82,33 +82,33 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>110</y>
+      <y>170</y>
       <width>71</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>검색키워드</string>
+     <string>검색 키워드</string>
     </property>
    </widget>
-   <widget class="QLabel" name="neighbor_request_message_labe">
+   <widget class="QLabel" name="category_select_labe">
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>140</y>
+      <y>110</y>
       <width>81</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>서이추 메세지</string>
+     <string>검색 키워드</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="username_text">
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>50</y>
+      <y>20</y>
       <width>131</width>
       <height>21</height>
      </rect>
@@ -118,23 +118,23 @@
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>80</y>
+      <y>50</y>
       <width>131</width>
       <height>21</height>
      </rect>
     </property>
    </widget>
-   <widget class="QLineEdit" name="neighbor_request_message_text">
+   <widget class="QLineEdit" name="search_keyword_text">
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>140</y>
+      <y>170</y>
       <width>131</width>
       <height>21</height>
      </rect>
     </property>
    </widget>
-   <widget class="QComboBox" name="search_main_keyword_text">
+   <widget class="QComboBox" name="search_main_category_text">
     <property name="geometry">
      <rect>
       <x>120</x>
@@ -144,7 +144,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QComboBox" name="search_sub_keyword_text">
+   <widget class="QComboBox" name="search_sub_category_text">
     <property name="geometry">
      <rect>
       <x>270</x>
@@ -157,8 +157,8 @@
    <widget class="QProgressBar" name="neighbor_request_progress_bar">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>220</y>
+      <x>40</x>
+      <y>250</y>
       <width>381</width>
       <height>23</height>
      </rect>
@@ -171,7 +171,7 @@
     <property name="geometry">
      <rect>
       <x>350</x>
-      <y>250</y>
+      <y>280</y>
       <width>61</width>
       <height>20</height>
      </rect>
@@ -184,9 +184,9 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>290</y>
+      <y>330</y>
       <width>171</width>
-      <height>261</height>
+      <height>221</height>
      </rect>
     </property>
     <property name="plainText">
@@ -197,7 +197,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>270</y>
+      <y>300</y>
       <width>171</width>
       <height>20</height>
      </rect>
@@ -212,8 +212,8 @@
    <widget class="QLabel" name="neighbor_request_message_labe_5">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>200</y>
+      <x>40</x>
+      <y>230</y>
       <width>351</width>
       <height>20</height>
      </rect>
@@ -228,6 +228,32 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+   <widget class="QPushButton" name="collect_by_category_button">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>110</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>블로그 수집하기</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="collect_by_search_button">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>170</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>블로그 수집하기</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -235,7 +261,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -260,7 +286,7 @@
   </action>
  </widget>
  <tabstops>
-  <tabstop>run_button</tabstop>
+  <tabstop>login_button</tabstop>
   <tabstop>stop_button</tabstop>
  </tabstops>
  <resources/>
