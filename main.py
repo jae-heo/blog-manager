@@ -4,10 +4,6 @@ from logic import *
 from PyQt5 import uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-import sqlite3
 
 class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
     def __init__(self):
