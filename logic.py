@@ -15,10 +15,11 @@ from selenium.webdriver.common.by import By
 from db import DbManager
 from datetime import datetime
 
+
 # 블로그 추가하려면 서이추가 가능한 사람만 추가하기..
 def naver_login(driver, username, password):
     open_new_window(driver)
-    
+
     get_page(driver, NAVER_LOGIN_URL)
 
     id_text_field = driver.find_element(By.CSS_SELECTOR, '#id')
@@ -38,7 +39,7 @@ def get_blogs_by_search(driver, search_keyword):
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)
 
-    #블로그 검색창에 입력
+    # 블로그 검색창에 입력
     search_bar_element = driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/div/input')
     key_in(search_bar_element, search_keyword)
     search_button_element = driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/a[1]')
@@ -103,8 +104,11 @@ def get_blogs_by_category(driver, main_category, sub_category):
         # 검색결과의 페이지 별 순회
         for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
             # 검색결과 내 Blog를 순회
-            for post_index in range(len(driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
-                post = driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[post_index]
+            for post_index in range(len(driver.find_elements(By.CSS_SELECTOR,
+                                                             ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
+                post = \
+                driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[
+                    post_index]
                 post_link_splat = post.get_attribute("href").split("/")
                 blog_id = post_link_splat[3]
                 post_id = post_link_splat[4]
@@ -112,7 +116,8 @@ def get_blogs_by_category(driver, main_category, sub_category):
                 open_new_window(driver)
                 get_page(driver, liked_link)
                 rand_sleep(3000, 5000)
-                for blog_description in driver.find_elements(By.CSS_SELECTOR, ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
+                for blog_description in driver.find_elements(By.CSS_SELECTOR,
+                                                             ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
                     blog_id = blog_description.get_attribute("href").split("/")[3]
                     # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
                     blog_url = "https://m.blog.naver.com/" + blog_id
@@ -143,6 +148,7 @@ def get_blogs_by_category(driver, main_category, sub_category):
             logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
             break
 
+
 def neighbor_request_logic(driver):
     db_instance = DbManager()
     all_blogs = db_instance.get_all_blogs()
@@ -153,7 +159,7 @@ def neighbor_request_logic(driver):
         if not blog["neighbor_request_current"]:
             if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
                 ######
-                #서로이웃 신청 코드 작성하기
+                # 서로이웃 신청 코드 작성하기
                 ######
                 # Update neighbor_request_date in sql_blog_table to today's date
                 blog["neighbor_request_date"] = now
@@ -168,7 +174,6 @@ def neighbor_request_logic(driver):
                 current_xpath = '//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[1]'
                 blog_url = f"https://m.blog.naver.com/{blog['blog_id']}"
 
-
                 if filtered_posts:
                     while True:
                         recent_post_id = get_post_id(driver, blog_url, current_xpath)
@@ -180,8 +185,13 @@ def neighbor_request_logic(driver):
                                 current_xpath = new_xpath
                                 break
                         else:
-                            driver.get(blog_url+'/'+recent_post_id)
-                            driver.find_element(By.XPATH,'//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[1]').click()
+                            if not filtered_posts:  # 만약 필터링된 포스터 테이블이 비어 있다면 새로운 post_id를 추가
+                                new_post = {'blog_post_id': blog['blog_id'], 'post_id': recent_post_id, 'is_liked': False, 'written_comment': ''}
+                                db_instance.update_blog(new_post)
+
+                            driver.get(blog_url + '/' + recent_post_id)
+                            driver.find_element(By.XPATH,
+                                                '//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[1]').click()
 
                             # 좋아요 버튼 확인
                             rand_sleep(450, 550)
