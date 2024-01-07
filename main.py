@@ -1,9 +1,14 @@
 import sys
 
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
+
 from logic import *
 from PyQt5 import uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
+from db import DbManager
+from PyQt5.QtWidgets import *
+
 
 class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
     def __init__(self):
@@ -17,11 +22,20 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.collect_by_search_button: QPushButton
         self.collect_by_category_button: QPushButton
         self.stop_button: QPushButton
+        self.neighbor_request_progress_bar: QProgressBar
+        self.neighbor_request_percent: QLabel
+        self.neighbor_request_current_listView: QListView
+
 
         self.login_button.clicked.connect(self.login)
         self.collect_by_category_button.clicked.connect(self.collect_by_category)
         self.collect_by_search_button.clicked.connect(self.collect_by_search)
         self.stop_button.clicked.connect(self.stop)
+
+
+        self.neighbor_request_model = QStandardItemModel()
+        self.neighbor_request_current_listView.setModel(self.neighbor_request_model)
+
 
         self.search_main_category_text: QComboBox
         self.search_main_category_text.addItems(["엔터테인먼트·예술", "생활·노하우·쇼핑", "취미·여가·여행", "지식·동향"])
@@ -30,6 +44,21 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         # Initialize sub keyword combo box
         self.search_sub_category_text: QComboBox
         self.search_sub_category_text.addItems(["문학·책", "영화", "미술·디자인", "공연·전시", "음악", "드라마", "스타·연예인", "만화·애니", "방송"])
+
+        self.update_neighbor_request_list_view("TemporaryItem1")
+        self.update_neighbor_request_list_view("TemporaryItem2")
+        self.update_neighbor_request_list_view("TemporaryItem3")
+        self.update_neighbor_request_list_view("TemporaryItem4")
+        self.update_neighbor_request_list_view("TemporaryItem5")
+        self.update_neighbor_request_list_view("TemporaryItem6")
+        self.update_neighbor_request_list_view("TemporaryItem7")
+        self.update_neighbor_request_list_view("TemporaryItem8")
+        self.update_neighbor_request_list_view("TemporaryItem9")
+        self.update_neighbor_request_list_view("TemporaryItem10")
+        self.update_neighbor_request_list_view("TemporaryItem11")
+        self.update_neighbor_request_list_view("TemporaryItem12")
+        self.update_neighbor_request_list_view("TemporaryItem13")
+        self.update_neighbor_request_list_view("TemporaryItem14")
 
         self.show()
 
@@ -85,11 +114,38 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             # Add default items or handle other cases
             self.search_sub_category_text.addItems(["All"])
 
+    def update_progress(self):
+        # Fetch data from db.py and calculate progress
+        DbManager.insert_blog_record_with_id("test1")
+        DbManager.update_neighbor_request_current("test1", True)
+        total_true_values = DbManager.get_true_blog_neighbor_request_count(self)
+        total_items = 5000
+        progress_percentage = (total_true_values / total_items) * 100
+
+        # Set progress bar value
+        self.neighbor_request_progress_bar.setValue(int(progress_percentage))
+
+        # Set progress label text
+        self.neighbor_request_percent.setText(f"{total_true_values:.2f}% / 5000")
+
+    def update_neighbor_request_list_view(self, username):
+        # Create a new item for the list view
+        new_item = QStandardItem(f"{username} 신청완료")
+
+        # Add the new item to the model
+        self.neighbor_request_model.appendRow(new_item)
+
+        # Limit the number of items to 6
+        if self.neighbor_request_model.rowCount() > 12:
+            # Remove the first item
+            self.neighbor_request_model.removeRow(0)
+
 
 if __name__ == "__main__":
     try:
         app = QApplication(sys.argv)
         program = Program()
         sys.exit(app.exec_())
+
     except Exception as e:
         print(e)

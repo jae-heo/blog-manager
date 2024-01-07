@@ -403,15 +403,15 @@ class DbManager:
 
 if __name__ == "__main__":
     db_manager = DbManager()
-    # db_manager.list_tables()
-    # db_manager.insert_blog_record_with_id("test1")
-    # db_manager.insert_blog_record_with_id("test2")
-    # db_manager.insert_blog_record_with_id("test3")
-    # blog = db_manager.get_all_blogs()[0]
-    # blog["blog_id"] = "modified ha ha"
-    # blog["comment_count"] = 20
-    # blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    # blog["neighbor_request_current"] = 99
-    # db_manager.update_blog(blog)
+    db_manager.list_tables()
+    db_manager.insert_blog_record_with_id("test1")
+    db_manager.insert_blog_record_with_id("test2")
+    db_manager.insert_blog_record_with_id("test3")
+    blog = db_manager.get_all_blogs()[0]
+    blog["blog_id"] = "modified ha ha"
+    blog["comment_count"] = 20
+    blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    blog["neighbor_request_current"] = 99
+    db_manager.update_blog(blog)
     for blog in db_manager.get_all_blogs():
         print(blog)
