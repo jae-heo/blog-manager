@@ -9,6 +9,11 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
 from db import DbManager
 from PyQt5.QtWidgets import *
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common import NoSuchElementException
+from selenium.webdriver import *
+from selenium.webdriver.common.by import By
 
 class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
     def __init__(self):
@@ -52,9 +57,10 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
         self.reload_timer = QTimer(self)
         self.reload_timer.timeout.connect(self.reload_data)
-        self.reload_timer.start(600000)
+        self.reload_timer.start(6000)
 
         self.show()
+
     def stop(self):
         self.close()
 
@@ -66,6 +72,8 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             username = self.username_text.text()
             password = self.password_text.text()
             naver_login(self.driver, DEV_ID, DEV_PW)
+
+
 
         except Exception as e:
             logging.getLogger("main").error(e)
@@ -131,8 +139,54 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             self.neighbor_request_model.removeRow(0)
 
     def reload_data(self):
-        self.update_neighbor_request_list_view("TemporaryItem1")
-        print("데이터 다시 로드 중...")
+        try:
+            db_instance = DbManager()
+            all_blogs = db_instance.get_all_blogs()
+            current_date = datetime.now().strftime('%Y-%m-%d')
+
+            # neighbor_request_date가 현재 날짜와 today_list_update가 0인 블로그 필터링
+            filtered_blogs = [
+                blog for blog in all_blogs
+                if blog.get("neighbor_request_date") == current_date and blog.get("today_list_update") == 0
+            ]
+
+            # 업데이트할 블로그가 없을 경우 예외처리
+            if not filtered_blogs:
+                print("업데이트할 블로그가 없습니다.")
+                return
+
+            # 업데이트할 블로그들에 대해 처리
+            for blog in filtered_blogs:
+                self.update_neighbor_request_list_view(blog.get("blog_id"))
+
+            # 프로그레스 업데이트
+            self.update_progress()
+            print("데이터 다시 로드 중...")
+
+        except Exception as e:
+            print(f"Error during data reload: {e}")
+
+    def today_neighbor_request_current(self):
+        try:
+            current_time = datetime.now().strftime('%H:%M:%S')
+            url = f'https://admin.blog.naver.com/{DEV_ID}/stat/today'
+            self.driver.get(url)
+
+            # Find the element using XPath
+            neighbor_count_element = self.driver.find_element_by_xpath(
+                '//*[@id="_root"]/div/div/div[2]/div/div/ul/li[5]/strong')
+
+            # Get the text content from the element
+            neighbor_count = neighbor_count_element.text.strip()
+
+            print(f"{current_time} : {neighbor_count}")
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+        finally:
+            self.driver.quit()
+
 
 
 if __name__ == "__main__":
