@@ -156,16 +156,15 @@ def neighbor_request_logic(driver):
 
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     for blog in all_blogs:
+        blog["like_count"] = 5
+        blog["comment_count"] = 5
         if not blog["neighbor_request_current"]:
             if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
-                ######
-                #서로이웃 신청 코드 작성하기
-                ######
-
                 blog_url = "https://m.blog.naver.com/" + blog["blog_id"]
 
                 open_new_window(driver)
                 get_page(driver, blog_url)
+                rand_sleep(300, 500)
                 add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
                 click(add_neighbor_button)
                 try:
@@ -245,7 +244,7 @@ def neighbor_request_logic(driver):
                                 continue
 
                             # 댓글 확인
-                            comment_section = driver.find_element(By.CSS_SELECTOR, '.area_comment .reply_area')
+                            comment_section = (driver.find_element(By.CSS_SELECTOR, '.area_comment .reply_area'))
                             if 'hidden' in comment_section.get_attribute('class'):
                                 # 댓글 섹션이 감춰져 있으면 펼치기
                                 driver.execute_script("arguments[0].classList.remove('hidden')", comment_section)

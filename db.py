@@ -11,6 +11,7 @@ from datetime import datetime
 # neighbor_request_rmv (boolean) true = 삭제되었다.
 # created_date
 # updated_date
+# today_list_update (0, 1)
 
 # BlogPostTable
 # id (user key)
@@ -35,6 +36,7 @@ class DbManager:
                         blog_id TEXT NOT NULL,
                         comment_count INTEGER DEFAULT 0 NOT NULL,
                         like_count INTEGER DEFAULT 0 NOT NULL,
+                        today_list_update INTEGER DEFAULT 0 NOT NULL,
                         neighbor_request_date DATE,
                         neighbor_request_current DEFAULT FALSE NOT NULL,
                         neighbor_request_rmv DEFAULT FALSE NOT NULL,
@@ -348,6 +350,7 @@ class DbManager:
                 blog_id = ?,
                 comment_count = ?,
                 like_count = ?,
+                today_list_update = ?,
                 neighbor_request_date = ?,
                 neighbor_request_current = ?,
                 neighbor_request_rmv = ?,
@@ -361,6 +364,7 @@ class DbManager:
             blog['blog_id'],
             blog['comment_count'],
             blog['like_count'],
+            blog['today_list_update'],
             blog['neighbor_request_date'],
             blog['neighbor_request_current'],
             blog['neighbor_request_rmv'],

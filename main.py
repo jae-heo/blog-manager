@@ -27,6 +27,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.collect_by_search_button: QPushButton
         self.collect_by_category_button: QPushButton
         self.stop_button: QPushButton
+        self.test_button: QPushButton
         self.neighbor_request_progress_bar: QProgressBar
         self.neighbor_request_percent: QLabel
         self.neighbor_request_today_current_listView: QListView
@@ -40,6 +41,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.collect_by_category_button.clicked.connect(self.collect_by_category)
         self.collect_by_search_button.clicked.connect(self.collect_by_search)
         self.stop_button.clicked.connect(self.stop)
+        self.test_button.clicked.connect(self.today_neighbor_request_current)
 
 
         self.neighbor_request_model = QStandardItemModel()
@@ -55,14 +57,14 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.search_sub_category_text: QComboBox
         self.search_sub_category_text.addItems(["문학·책", "영화", "미술·디자인", "공연·전시", "음악", "드라마", "스타·연예인", "만화·애니", "방송"])
 
-        self.reload_timer = QTimer(self)
-        self.reload_timer.timeout.connect(self.reload_data)
-        self.reload_timer.start(6000)
 
         self.show()
 
+
+
+
     def stop(self):
-        self.close()
+            self.close()
 
     def login(self):
         try:
@@ -72,8 +74,6 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             username = self.username_text.text()
             password = self.password_text.text()
             naver_login(self.driver, DEV_ID, DEV_PW)
-
-
 
         except Exception as e:
             logging.getLogger("main").error(e)
@@ -115,17 +115,6 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             # Add default items or handle other cases
             self.search_sub_category_text.addItems(["All"])
 
-    def update_progress(self):
-        total_true_values = DbManager.get_true_blog_neighbor_request_count(self)
-        total_items = 5000
-        progress_percentage = (total_true_values / total_items) * 100
-
-        # Set progress bar value
-        self.neighbor_request_progress_bar.setValue(int(progress_percentage))
-
-        # Set progress label text
-        self.neighbor_request_percent.setText(f"{total_true_values:.2f}% / 5000")
-
     def update_neighbor_request_list_view(self, username):
         # Create a new item for the list view
         new_item = QStandardItem(f"{username} 신청완료")
@@ -166,27 +155,58 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         except Exception as e:
             print(f"Error during data reload: {e}")
 
+
     def today_neighbor_request_current(self):
         try:
+
             current_time = datetime.now().strftime('%H:%M:%S')
-            url = f'https://admin.blog.naver.com/{DEV_ID}/stat/today'
+
+            get_page(self.driver, NAVER_LOGIN_URL)
+
+            id_text_field = self.driver.find_element(By.CSS_SELECTOR, '#id')
+            key_in(id_text_field, DEV_ID)
+
+            pw_text_field = self.driver.find_element(By.CSS_SELECTOR, '#pw')
+            key_in(pw_text_field, DEV_PW)
+
+            login_button = self.driver.find_element(By.XPATH, '//*[@id="log.login"]')
+            click(login_button)
+
+            url = f'https://admin.blog.naver.com/BuddyGroupManage.naver?blogId={DEV_ID}'
+
             self.driver.get(url)
 
-            # Find the element using XPath
-            neighbor_count_element = self.driver.find_element_by_xpath(
-                '//*[@id="_root"]/div/div/div[2]/div/div/ul/li[5]/strong')
+            # tr 요소들을 XPath를 통해 가져옵니다.
+            tr_elements = self.driver.find_elements(By.XPATH, '//*[@id="wrap"]/table/tbody/tr')
 
-            # Get the text content from the element
-            neighbor_count = neighbor_count_element.text.strip()
+            # tr 개수를 출력합니다.
+            tr_count = len(tr_elements)
+            print(f"Number of tr elements: {tr_count}")
 
-            print(f"{current_time} : {neighbor_count}")
+            total_value = 0
+            for i in range(tr_count):
+                xpath = f'//*[@id="wrap"]/table/tbody/tr[{i + 1}]/td[4]/span'
+                span_element = self.driver.find_element(By.XPATH, xpath)
+                value = int(span_element.text)
+                total_value += value
+
+            new_item = QStandardItem(f"{current_time} : {total_value}")
+            self.neighbor_request_today_model.appendRow(new_item)
+
+            if current_time == "00-00-00":
+                self.neighbor_request_today_model.clear()
+            #바
+            total_items = 5000.0
+            progress_percentage = (total_value / total_items) * 100
+
+            # Set progress bar value
+            self.neighbor_request_progress_bar.setValue(int(progress_percentage))
+
+            # Set progress label text
+            self.neighbor_request_percent.setText(f"{total_value} / 5000")
 
         except Exception as e:
-            print(f"Error: {e}")
-
-        finally:
-            self.driver.quit()
-
+            print(f"Error: {e}, 여기임")
 
 
 if __name__ == "__main__":
