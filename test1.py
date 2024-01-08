@@ -25,12 +25,12 @@ def today_neighbor_request_current(driver):
         login_button = driver.find_element(By.XPATH, '//*[@id="log.login"]')
         click(login_button)
 
-        url = f'https://admin.blog.naver.com/{DEV_ID}/stat/today'
+        url = f'https://admin.blog.naver.com/{DEV_ID}/buddy/manage'
         driver.get(url)
 
         # Wait for the element to be present
         neighbor_count_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="_root"] div ul li:nth-child(5) strong'))
+            EC.presence_of_element_located((By.XPATH, '//*[@id="buddyListManageForm"]/div[1]/div[2]/span/strong'))
         )
 
         # Get the text content from the element
