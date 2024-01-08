@@ -18,6 +18,7 @@ from datetime import datetime
 
 # 블로그 추가하려면 서이추가 가능한 사람만 추가하기..
 def naver_login(driver, username, password):
+    db_manager = DbManager()
     open_new_window(driver)
 
     get_page(driver, NAVER_LOGIN_URL)
@@ -33,6 +34,40 @@ def naver_login(driver, username, password):
 
     close_current_window(driver)
 
+
+def initialize(driver, username):
+    db_manager = DbManager()
+    open_new_window(driver)
+    url = f"https://admin.blog.naver.com/BuddyListManage.naver?blogId={username}"
+    get_page(driver, url)
+    buddy_ids = []
+    while True:
+
+        print("while 돌았음")
+        # 검색결과의 페이지 별 순회
+        current_page_element = driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong')
+        current_page_text = current_page_element.text
+        current_page_text_copy = current_page_text
+        active_page_buttons = driver.find_elements(By.CSS_SELECTOR, '.paginate .paginate_re a')
+
+        # 로직
+        buddies = driver.find_elements(By.CSS_SELECTOR, ".buddy .ellipsis2 a")
+        for buddy in buddies:
+            blog_id = buddy.get_attribute("href").split("/")[3]
+            buddy_ids.append(blog_id)
+
+        for page_button in active_page_buttons:
+            if int(page_button.text) == int(current_page_text) + 1:
+                click(page_button)
+                current_page_text = driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong').text
+        
+        # 만약 다음 페이지가 없다면
+        if current_page_text == current_page_text_copy:
+            break
+
+    db_manager.insert_blogs_record_with_ids(buddy_ids)
+    close_current_window(driver)
+    
 
 def get_blogs_by_search(driver, search_keyword):
     db_instance = DbManager()
