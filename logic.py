@@ -161,6 +161,31 @@ def neighbor_request_logic(driver):
                 ######
                 #서로이웃 신청 코드 작성하기
                 ######
+
+                blog_url = "https://m.blog.naver.com/" + blog["blog_id"]
+
+                open_new_window(driver)
+                get_page(driver, blog_url)
+                add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                click(add_neighbor_button)
+                try:
+                    both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
+                    # 만약 서이추가 가능한 사람일 경우
+                    if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                        # 서이추 버튼 클릭
+                        click(both_buddy_radio)
+                        # 서이추 메세지 입력
+                        neighbor_request_message_text_area = driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
+                        clear(neighbor_request_message_text_area)
+                        key_in(neighbor_request_message_text_area, neighbor_request_message)
+                        neighbor_request_button = driver.find_element(By.CLASS_NAME, "btn_ok")
+                        click(neighbor_request_button)
+                except Exception as e:
+                    # 이경우는 이미 서이추가 되어있는 사람이라서 그냥 넘어가는 것으로..
+                    pass
+                # 이제 열었던 창을 닫아야 함.
+                close_current_window(driver)
+
                 # Update neighbor_request_date in sql_blog_table to today's date
                 blog["neighbor_request_date"] = now
                 db_instance.update_blog(blog)
