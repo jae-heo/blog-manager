@@ -54,10 +54,6 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.reload_timer.timeout.connect(self.reload_data)
         self.reload_timer.start(600000)
 
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_neighbor_request_data)
-        self.timer.start(2 * 60 * 60 * 1000)  # 2 hours in milliseconds
-
         self.show()
     def stop(self):
         self.close()
