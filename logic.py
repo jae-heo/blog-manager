@@ -159,7 +159,7 @@ def neighbor_request_logic(driver):
         if not blog["neighbor_request_current"]:
             if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
                 ######
-                # 서로이웃 신청 코드 작성하기
+                #서로이웃 신청 코드 작성하기
                 ######
                 # Update neighbor_request_date in sql_blog_table to today's date
                 blog["neighbor_request_date"] = now
@@ -230,6 +230,8 @@ def neighbor_request_logic(driver):
                             post['written_comment'] = comment_input.get_attribute('좋은 글 감사합니다!')
                             db_instance.update_blog(blog)
                             db_instance.update_post(post)
+
+                            close_current_window(driver)
                             break
         else:
             if (now - blog["neighbor_request_date"]).days > 7:

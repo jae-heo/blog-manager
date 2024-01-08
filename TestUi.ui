@@ -196,7 +196,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>서로이웃 현황</string>
+     <string>서로이웃 신청 현황</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -255,6 +255,32 @@
       <width>161</width>
       <height>211</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QListView" name="neighbor_request_today_current_listView">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>330</y>
+      <width>161</width>
+      <height>211</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="neighbor_request_message_labe_6">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>310</y>
+      <width>161</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>일일 서로이웃 증가 현황</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
   </widget>
