@@ -95,6 +95,31 @@ class DbManager:
         self.con.commit()
         print(f"Blog with ID {blog_id} inserted successfully.")
 
+        # BlogTable에 blog_id 저장하는 함수, id 중복 확인하기 기능 추가하기
+    def insert_blogs_record_with_ids(self, blog_ids):
+        count = 0
+        all_blogs = self.get_all_blogs()
+        if all_blogs:
+            all_ids = [blog["blog_id"] for blog in all_blogs]
+        else:
+            all_ids = None
+
+        for blog_id in blog_ids:
+            if all_ids:
+                if blog_id in all_ids:
+                    print(f"Blog with ID {blog_id} already exists. Skipping insertion.")
+                    continue
+            else:
+                sql_insert_blog = """
+                    INSERT INTO BlogTable (blog_id)
+                    VALUES (?);
+                """
+                self.c.execute(sql_insert_blog, (blog_id,))
+                count += 1
+
+        self.con.commit()
+        print(f"{count} blogs inserted successfully.")
+
     # Blogtable blog_id 전체 출력
     def get_all_blog_ids(self):
         sql_get_all_blog_ids = "SELECT blog_id FROM BlogTable"
@@ -401,17 +426,24 @@ class DbManager:
         ))
         self.con.commit()
 
+# if __name__ == "__main__":
+#     db_manager = DbManager()
+#     db_manager.list_tables()
+#     db_manager.insert_blog_record_with_id("test1")
+#     db_manager.insert_blog_record_with_id("test2")
+#     db_manager.insert_blog_record_with_id("test3")
+#     blog = db_manager.get_all_blogs()[0]
+#     blog["blog_id"] = "modified ha ha"
+#     blog["comment_count"] = 20
+#     blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+#     blog["neighbor_request_current"] = 99
+#     db_manager.update_blog(blog)
+#     for blog in db_manager.get_all_blogs():
+#         print(blog)
+
 if __name__ == "__main__":
     db_manager = DbManager()
-    db_manager.list_tables()
-    db_manager.insert_blog_record_with_id("test1")
-    db_manager.insert_blog_record_with_id("test2")
-    db_manager.insert_blog_record_with_id("test3")
-    blog = db_manager.get_all_blogs()[0]
-    blog["blog_id"] = "modified ha ha"
-    blog["comment_count"] = 20
-    blog["neighbor_request_date"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    blog["neighbor_request_current"] = 99
-    db_manager.update_blog(blog)
-    for blog in db_manager.get_all_blogs():
+    blogs = db_manager.get_all_blogs()
+    for blog in blogs:
         print(blog)
+    print(len(blogs))
