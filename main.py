@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
 from db import DbManager
 from PyQt5.QtWidgets import *
-from bs4 import BeautifulSoup
 
 class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
     def __init__(self):
@@ -25,8 +24,11 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.stop_button: QPushButton
         self.neighbor_request_progress_bar: QProgressBar
         self.neighbor_request_percent: QLabel
-        self.neighbor_request_current_listView: QListView
         self.neighbor_request_today_current_listView: QListView
+        self.neighbor_request_current_listView: QListView
+
+        self.neighbor_request_model = QStandardItemModel()
+        self.neighbor_request_current_listView.setModel(self.neighbor_request_model)
 
 
         self.login_button.clicked.connect(self.login)
@@ -48,17 +50,15 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.search_sub_category_text: QComboBox
         self.search_sub_category_text.addItems(["문학·책", "영화", "미술·디자인", "공연·전시", "음악", "드라마", "스타·연예인", "만화·애니", "방송"])
 
-        self.update_neighbor_request_list_view("TemporaryItem1")
-        self.update_neighbor_request_list_view("TemporaryItem2")
-        self.update_neighbor_request_list_view("TemporaryItem3")
-        self.update_neighbor_request_today_list_view("pgw031203")
-
-        self.show()
-
         self.reload_timer = QTimer(self)
         self.reload_timer.timeout.connect(self.reload_data)
-        self.reload_timer.start(600000)  # 600,000 milliseconds = 10 minutes
+        self.reload_timer.start(600000)
 
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_neighbor_request_data)
+        self.timer.start(2 * 60 * 60 * 1000)  # 2 hours in milliseconds
+
+        self.show()
     def stop(self):
         self.close()
 
@@ -134,8 +134,8 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             # Remove the first item
             self.neighbor_request_model.removeRow(0)
 
-
     def reload_data(self):
+        self.update_neighbor_request_list_view("TemporaryItem1")
         print("데이터 다시 로드 중...")
 
 
