@@ -284,11 +284,13 @@ def neighbor_request_logic(driver):
                             click_button.click()
 
                             # 댓글 입력란을 찾아서 내용 입력
+                            rand_sleep(450, 550)
                             comment_input = driver.find_element(By.XPATH,
                                                                 '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
                             comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
 
                             # 댓글 작성 버튼을 찾아서 클릭
+                            rand_sleep(450, 550)
                             comment_button = driver.find_element(By.XPATH,
                                                                  '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
                             comment_button.click()
