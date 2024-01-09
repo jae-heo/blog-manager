@@ -279,19 +279,22 @@ def neighbor_request_logic(driver):
                                 continue
 
                             # 댓글 확인
-                            comment_section = (driver.find_element(By.CSS_SELECTOR, '.area_comment .reply_area'))
-                            if 'hidden' in comment_section.get_attribute('class'):
-                                # 댓글 섹션이 감춰져 있으면 펼치기
-                                driver.execute_script("arguments[0].classList.remove('hidden')", comment_section)
-                            # 댓글 입력
-                            comment_input = driver.find_element(By.CSS_SELECTOR, '.reply_write textarea')
+                            # 클릭할 부분을 xpath로 찾아서 클릭
+                            click_button = driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
+                            click_button.click()
+
+                            # 댓글 입력란을 찾아서 내용 입력
+                            comment_input = driver.find_element(By.XPATH,
+                                                                '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
                             comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
-                            comment_input.send_keys(Keys.RETURN)
-                            print(f"블로그 {blog['blog_id']}에 댓글을 작성했습니다.")
-                            blog['comment_count'] += 1
-                            post['written_comment'] = comment_input.get_attribute('좋은 글 감사합니다!')
-                            db_instance.update_blog(blog)
-                            db_instance.update_post(post)
+
+                            # 댓글 작성 버튼을 찾아서 클릭
+                            comment_button = driver.find_element(By.XPATH,
+                                                                 '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
+                            comment_button.click()
+
+                            # 댓글 작성 완료 메시지 출력
+                            print("댓글을 작성했습니다.")
 
                             close_current_window(driver)
                             break
