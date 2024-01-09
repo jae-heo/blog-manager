@@ -280,26 +280,34 @@ def neighbor_request_logic(driver):
 
                             # 댓글 확인
                             # 클릭할 부분을 xpath로 찾아서 클릭
-                            click_button = driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
-                            click_button.click()
+                            try:
+                                click_button = driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
+                                click_button.click()
 
-                            # 댓글 입력란을 찾아서 내용 입력
-                            rand_sleep(450, 550)
-                            comment_input = driver.find_element(By.XPATH,
-                                                                '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
-                            comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
+                                # 댓글 입력란을 찾아서 내용 입력
+                                rand_sleep(450, 550)
+                                comment_input = driver.find_element(By.XPATH,
+                                                                    '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
+                                comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
+                                blog['comment_count'] += 1
+                                post['written_comment'] = comment_input.get_attribute('좋은 글 감사합니다!')
 
-                            # 댓글 작성 버튼을 찾아서 클릭
-                            rand_sleep(450, 550)
-                            comment_button = driver.find_element(By.XPATH,
-                                                                 '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
-                            comment_button.click()
+                                # 댓글 작성 버튼을 찾아서 클릭
+                                rand_sleep(450, 550)
+                                comment_button = driver.find_element(By.XPATH,
+                                                                     '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
+                                comment_button.click()
 
-                            # 댓글 작성 완료 메시지 출력
-                            print("댓글을 작성했습니다.")
+                                # 댓글 작성 완료 메시지 출력
+                                print("댓글을 작성했습니다.")
 
-                            close_current_window(driver)
-                            break
+                                db_instance.update_blog(blog)
+                                db_instance.update_post(post)
+
+                                close_current_window(driver)
+                            except Exception as e:
+                                print(f"An error occurred: {str(e)}")
+                                # Handle the error as needed, e.g., logging or additional actions.
         else:
             if (now - blog["neighbor_request_date"]).days > 7:
                 # Update neighbor_request_current to False
