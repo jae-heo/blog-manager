@@ -71,6 +71,16 @@ def initialize(driver, username):
 
 def get_blogs_by_search(driver, search_keyword):
     db_instance = DbManager()
+
+    count = 0
+    today = datetime.now().date()
+    blogs = db_instance.get_all_blogs()
+    if blogs:
+        for blog in blogs:
+            blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+            if today == blog_date:
+                count += 1
+
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)
 
@@ -97,6 +107,13 @@ def get_blogs_by_search(driver, search_keyword):
                     # 만약 서이추가 가능한 사람일 경우
                     if both_buddy_radio.get_attribute("ng-disabled") == "false":
                         db_instance.insert_blog_record_with_id(blog_id)
+                        count += 1
+
+                        if count > 100:
+                            close_current_window(driver)
+                            rand_sleep()
+                            close_current_window(driver)
+                            return
                 except Exception as e:
                     # 이 경우는 이미 이웃
                     pass
@@ -113,10 +130,22 @@ def get_blogs_by_search(driver, search_keyword):
         except NoSuchElementException as e:
             logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
             break
+    close_current_window(driver)
+    
 
 
 def get_blogs_by_category(driver, main_category, sub_category):
     db_instance = DbManager()
+
+    count = 0
+    today = datetime.now().date()
+    blogs = db_instance.get_all_blogs()
+    if blogs:
+        for blog in blogs:
+            blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+            if today == blog_date:
+                count += 1
+
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)
 

@@ -445,9 +445,21 @@ class DbManager:
 #     for blog in db_manager.get_all_blogs():
 #         print(blog)
 
+# if __name__ == "__main__":
+#     db_manager = DbManager()
+#     today = datetime.now().date()
+#     # db_manager.insert_blogs_record_with_ids(['test1', 'test2', 'test3']) 
+#     blogs = db_manager.get_all_blogs()
+#     # for blog in blogs:
+#     #     print(blog)
+#     print(type(blogs[0]['created_date']))
+#     blog_date = datetime.strptime(blogs[0]['created_date'], "%Y-%m-%d %H:%M:%S").date()
+#     # print(type(datetime.strptime(blogs[0]['created_date'], "%Y-%m-%d %H:%M:%S").date()))
+#     print(today == blog_date)
+#     print(len(blogs))
+        
+
 if __name__ == "__main__":
     db_manager = DbManager()
-    blogs = db_manager.get_all_blogs()
-    for blog in blogs:
-        print(blog)
-    print(len(blogs))
+    for i in range(100):
+        db_manager.insert_blog_record_with_id(f'test{i}')
