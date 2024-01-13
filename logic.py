@@ -219,9 +219,18 @@ def neighbor_request_logic(driver):
     all_posts = db_instance.get_all_blog_posts()
 
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    neighbor_request_count = 0
+    today = datetime.now().date()
+    blogs = db_instance.get_all_blogs()
+    if blogs:
+        for blog in blogs:
+            blog_date = datetime.strptime(blog['neighbor_request_date'], "%Y-%m-%d %H:%M:%S").date()
+            if today == blog_date:
+                neighbor_request_count += 1
+
+
     for blog in all_blogs:
-        blog["like_count"] = 5
-        blog["comment_count"] = 5
         if not blog["neighbor_request_current"]:
             if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
                 blog_url = "https://m.blog.naver.com/" + blog["blog_id"]
@@ -232,6 +241,8 @@ def neighbor_request_logic(driver):
                 add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
                 click(add_neighbor_button)
                 try:
+                    if neighbor_request_count > 100:
+                        continue
                     both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
                     # 만약 서이추가 가능한 사람일 경우
                     if both_buddy_radio.get_attribute("ng-disabled") == "false":
@@ -246,6 +257,9 @@ def neighbor_request_logic(driver):
                         key_in(neighbor_request_message_text_area, neighbor_request_message)
                         neighbor_request_button = driver.find_element(By.CLASS_NAME, "btn_ok")
                         click(neighbor_request_button)
+
+                        neighbor_request_count += 1
+
                 except Exception as e:
                     # 이경우는 이미 서이추가 되어있는 사람이라서 그냥 넘어가는 것으로..
                     pass
