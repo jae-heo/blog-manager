@@ -42,14 +42,14 @@
    <widget class="QPushButton" name="stop_button">
     <property name="geometry">
      <rect>
-      <x>700</x>
-      <y>20</y>
+      <x>690</x>
+      <y>520</y>
       <width>75</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>중지</string>
+     <string>종료</string>
     </property>
    </widget>
    <widget class="QLabel" name="username_label">
@@ -325,6 +325,19 @@ p, li { white-space: pre-wrap; }
     </property>
     <property name="text">
      <string>test</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pause_button">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>520</y>
+      <width>75</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>중지</string>
     </property>
    </widget>
   </widget>

@@ -354,6 +354,7 @@ class DbManager:
             result = [dict(zip(columns, blog)) for blog in blogs]
             return result
 
+
     # BlogPosttable blog_id 전체 출력
     def get_all_blog_posts(self):
         self.c.execute("PRAGMA table_info(BlogPostTable)")

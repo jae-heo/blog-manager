@@ -50,3 +50,14 @@ def click(element):
     element.click()
     rand_sleep()
 
+def close_all_tabs(driver):
+    driver.execute_script("window.open('', '_blank');")
+    tabs = driver.window_handles
+    driver.switch_to.window(tabs[-1])
+    
+    all_handles = driver.window_handles
+    for handle in all_handles:
+        if handle != driver.current_window_handle:
+            driver.switch_to.window(handle)
+            driver.close()
+            driver.switch_to.window(tabs[-1])

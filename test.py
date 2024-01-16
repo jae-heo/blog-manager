@@ -3,6 +3,11 @@ from custom_func import *
 from logic import *
 
 driver = get_chrome_driver()
-naver_login(driver, DEV_ID, DEV_PW)
 
-initialize(driver, DEV_ID)
+get_page(driver, 'http://www.naver.com')
+open_new_window(driver)
+get_page(driver, 'http://www.naver.com')
+open_new_window(driver)
+get_page(driver, 'http://www.naver.com')
+
+close_all_tabs(driver)

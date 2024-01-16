@@ -12,62 +12,169 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
+from PyQt5.QtCore import QThread, pyqtSignal
+
 from db import DbManager
 from datetime import datetime
 
 
-# 블로그 추가하려면 서이추가 가능한 사람만 추가하기..
-def naver_login(driver, username, password):
-    db_manager = DbManager()
-    open_new_window(driver)
+class LoginThread(QThread):
+    finished_signal = pyqtSignal()
+    interrupt_signal = False
 
-    get_page(driver, NAVER_LOGIN_URL)
+    def __init__(self, driver, username, password, db_name, parent=None):
+        super().__init__(parent)
+        self.driver = driver
+        self.username = username
+        self.password = password
+        self.db_name = db_name
+        self.blog_exist = False
 
-    id_text_field = driver.find_element(By.CSS_SELECTOR, '#id')
-    key_in(id_text_field, username)
+    def run(self):
+        db_manager = DbManager(self.db_name)
+        open_new_window(self.driver)
+        get_page(self.driver, NAVER_LOGIN_URL)  
 
-    pw_text_field = driver.find_element(By.CSS_SELECTOR, '#pw')
-    key_in(pw_text_field, password)
+        id_text_field = self.driver.find_element(By.CSS_SELECTOR, '#id')
+        key_in(id_text_field, self.username)
 
-    login_button = driver.find_element(By.XPATH, '//*[@id="log.login"]')
-    click(login_button)
+        pw_text_field = self.driver.find_element(By.CSS_SELECTOR, '#pw')
+        key_in(pw_text_field, self.password)
 
-    close_current_window(driver)
+        login_button = self.driver.find_element(By.XPATH, '//*[@id="log.login"]')
+        click(login_button)
 
+        close_current_window(self.driver)
 
-def initialize(driver, username):
-    db_manager = DbManager()
-    open_new_window(driver)
-    url = f"https://admin.blog.naver.com/BuddyListManage.naver?blogId={username}"
-    get_page(driver, url)
-    buddy_ids = []
-    while True:
+        if db_manager.get_all_blogs():
+            self.blog_exist = True
 
-        print("while 돌았음")
-        # 검색결과의 페이지 별 순회
-        current_page_element = driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong')
-        current_page_text = current_page_element.text
-        current_page_text_copy = current_page_text
-        active_page_buttons = driver.find_elements(By.CSS_SELECTOR, '.paginate .paginate_re a')
+        self.finished_signal.emit()
 
-        # 로직
-        buddies = driver.find_elements(By.CSS_SELECTOR, ".buddy .ellipsis2 a")
-        for buddy in buddies:
-            blog_id = buddy.get_attribute("href").split("/")[3]
-            buddy_ids.append(blog_id)
+class InitializeThread(QThread):
+    finished_signal = pyqtSignal()
+    interrupt_signal = False
 
-        for page_button in active_page_buttons:
-            if int(page_button.text) == int(current_page_text) + 1:
-                click(page_button)
-                current_page_text = driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong').text
+    def __init__(self, driver, username, db_name, parent=None):
+        super().__init__(parent)
+        self.driver = driver
+        self.username = username
+        self.db_name = db_name
+
+    def run(self):
+        db_manager = DbManager(self.db_name)
+        open_new_window(self.driver)
+        url = f"https://admin.blog.naver.com/BuddyListManage.naver?blogId={self.username}"
+        get_page(self.driver, url)
+        buddy_ids = []
+        while True:
+            if self.interrupt_signal:
+                print("InitializeThread interrupted.")
+                break
+
+            # 검색결과의 페이지 별 순회
+            current_page_element = self.driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong')
+            current_page_text = current_page_element.text
+            current_page_text_copy = current_page_text
+            active_page_buttons = self.driver.find_elements(By.CSS_SELECTOR, '.paginate .paginate_re a')
+
+            # 로직
+            buddies = self.driver.find_elements(By.CSS_SELECTOR, ".buddy .ellipsis2 a")
+            for buddy in buddies:
+                blog_id = buddy.get_attribute("href").split("/")[3]
+                buddy_ids.append(blog_id)
+
+            for page_button in active_page_buttons:
+                if int(page_button.text) == int(current_page_text) + 1:
+                    click(page_button)
+                    current_page_text = self.driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong').text
+            
+            # 만약 다음 페이지가 없다면
+            if current_page_text == current_page_text_copy:
+                break
+
+        db_manager.insert_blogs_record_with_ids(buddy_ids)
+        close_current_window(self.driver)
+
+class CollectBlogBySearchThread(QThread):
+    finished_signal = pyqtSignal()
+    interrupt_signal = False
+
+    def __init__(self, driver, search_keyword, db_name, parent=None):
+        super().__init__(parent)
+        self.driver = driver
+        self.search_keyword = search_keyword
+        self.db_name = db_name
+
+    def run(self):
+        db_instance = DbManager(self.db_name)
+
+        count = 0
+        daily_limit = 1000
+        today = datetime.now().date()
+        blogs = db_instance.get_all_blogs()
+        if blogs:
+            for blog in blogs:
+                blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+                if today == blog_date:
+                    count += 1
+        if count > daily_limit:
+            # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+            return
         
-        # 만약 다음 페이지가 없다면
-        if current_page_text == current_page_text_copy:
-            break
+        open_new_window(self.driver)
+        get_page(self.driver, BLOG_MAIN_URL)
 
-    db_manager.insert_blogs_record_with_ids(buddy_ids)
-    close_current_window(driver)
-    
+        search_bar_element = self.driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/div/input')
+        key_in(search_bar_element, self.search_keyword)
+        search_button_element = self.driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/a[1]')
+        click(search_button_element)
+
+        while True:
+            # 검색결과의 페이지 별 순회
+            for i in range(0, len(self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
+                # 검색결과 내 Blog를 순회
+                for author in self.driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
+                    if self.interrupt_signal:
+                        close_all_tabs(self.driver)
+                        return
+
+                    blog_id = author.get_attribute("href").split("/")[3]
+                    # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
+                    blog_url = "https://m.blog.naver.com/" + blog_id
+                    open_new_window(self.driver)
+                    get_page(self.driver, blog_url)
+                    try:
+                        add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                        click(add_neighbor_button)
+                        both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
+                        # 만약 서이추가 가능한 사람일 경우
+                        if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                            db_instance.insert_blog_record_with_id(blog_id)
+                            count += 1
+
+                            if count > daily_limit:
+                                close_current_window(self.driver)
+                                rand_sleep()
+                                close_current_window(self.driver)
+
+                                # 이곳에서 오늘 100명이 끝났다는 알림을 보내야함!
+                                return
+                    except Exception as e:
+                        pass
+                    close_current_window(self.driver)
+
+                if (i + 1) != len(self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
+                    page_next_number_button = self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
+                    click(page_next_number_button)
+            try:
+                page_next_button = self.driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
+                click(page_next_button)
+            except NoSuchElementException as e:
+                logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
+                break
+        close_current_window(self.driver)
 
 def get_blogs_by_search(driver, search_keyword):
     db_instance = DbManager()
@@ -80,7 +187,10 @@ def get_blogs_by_search(driver, search_keyword):
             blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
             if today == blog_date:
                 count += 1
-
+    if count > 100:
+        # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+        return
+    
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)
 
@@ -113,6 +223,8 @@ def get_blogs_by_search(driver, search_keyword):
                             close_current_window(driver)
                             rand_sleep()
                             close_current_window(driver)
+
+                            # 이곳에서 오늘 100명이 끝났다는 알림을 보내야함!
                             return
                 except Exception as e:
                     # 이 경우는 이미 이웃
@@ -145,6 +257,10 @@ def get_blogs_by_category(driver, main_category, sub_category):
             blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
             if today == blog_date:
                 count += 1
+
+    if count > 100:
+        # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+        return
 
     open_new_window(driver)
     get_page(driver, BLOG_MAIN_URL)

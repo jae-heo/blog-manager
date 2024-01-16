@@ -21,12 +21,14 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.setupUi(self)
         self.init()
         self.driver = get_chrome_driver()
+        self.thread_dict = {}
 
     def init(self):
         self.login_button: QPushButton
         self.collect_by_search_button: QPushButton
         self.collect_by_category_button: QPushButton
         self.stop_button: QPushButton
+        self.pause_button: QPushButton
         self.test_button: QPushButton
         self.neighbor_request_progress_bar: QProgressBar
         self.neighbor_request_percent: QLabel
@@ -36,13 +38,12 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.neighbor_request_model = QStandardItemModel()
         self.neighbor_request_current_listView.setModel(self.neighbor_request_model)
 
-
         self.login_button.clicked.connect(self.login)
         self.collect_by_category_button.clicked.connect(self.collect_by_category)
         self.collect_by_search_button.clicked.connect(self.collect_by_search)
         self.stop_button.clicked.connect(self.stop)
+        self.pause_button.clicked.connect(self.pause)
         self.test_button.clicked.connect(self.today_neighbor_request_current)
-
 
         self.neighbor_request_model = QStandardItemModel()
         self.neighbor_request_current_listView.setModel(self.neighbor_request_model)
@@ -56,33 +57,61 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         # Initialize sub keyword combo box
         self.search_sub_category_text: QComboBox
         self.search_sub_category_text.addItems(["문학·책", "영화", "미술·디자인", "공연·전시", "음악", "드라마", "스타·연예인", "만화·애니", "방송"])
-
-
         self.show()
 
-
-
-
     def stop(self):
-            self.close()
+        print("프로그램이 종료됩니다.")
+        self.driver.quit()
+        self.close()
+        print("프로그램이 종료되었습니다.")
+            
+    def pause(self):
+        for thread_name in self.thread_dict.keys():
+            self.thread_dict[thread_name].interrupt_signal = True
 
     def login(self):
         try:
+            print('login_begins')
             self.username_text: QLineEdit
             self.password_text: QLineEdit
 
-            username = self.username_text.text()
-            password = self.password_text.text()
-            naver_login(self.driver, DEV_ID, DEV_PW)
+            username = DEV_ID
+            password = DEV_PW
 
+            # username = self.username_text.text()
+            # password = self.password_text.text()
+            self.username = username
+
+            login_thread = LoginThread(self.driver, username, password, self.username)
+            self.thread_dict['login_thread'] = login_thread
+            login_thread.finished_signal.connect(lambda: self.after_login(login_thread.blog_exist))
+            login_thread.start()
+            time.sleep(1)
+            print('login_ends')
         except Exception as e:
             logging.getLogger("main").error(e)
+
+    def after_login(self, blog_exist):
+        if not blog_exist:
+            print('initializing begins')
+            initialize_thread = InitializeThread(self.driver, self.username, self.username)
+            self.thread_dict['initialize_thread'] = initialize_thread
+            initialize_thread.finished_signal.connect(lambda: self.after_initialize)
+            initialize_thread.start()
+            time.sleep(1)
+
+    def after_initialize(self):
+        print('initializing ends')
 
     def collect_by_search(self):
         try:
             self.search_keyword_text: QLineEdit
             search_keyword = self.search_keyword_text.text()
-            get_blogs_by_search(self.driver, search_keyword)
+
+            collect_blogs_by_search_thread = CollectBlogBySearchThread(self.driver, search_keyword, self.username)
+            self.thread_dict['collect_blogs_by_search_thread'] = collect_blogs_by_search_thread
+            collect_blogs_by_search_thread.start()
+            time.sleep(1)
         except Exception as e:
             logging.getLogger("main").error(e)
         
