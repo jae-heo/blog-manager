@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from db import DbManager
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class LoginThread(QThread):
@@ -95,6 +95,13 @@ class InitializeThread(QThread):
                 break
 
         db_manager.insert_blogs_record_with_ids(buddy_ids)
+
+        blogs = db_manager.get_all_blogs()
+        for blog in blogs:
+            created_date = blog['created_date']
+            created_date = datetime.strptime(created_date, '%Y-%m-%d %H:%M:%S')
+            blog['created_date'] = created_date - timedelta(days=1)
+            db_manager.update_blog(blog)
         close_current_window(self.driver)
 
 class CollectBlogBySearchThread(QThread):

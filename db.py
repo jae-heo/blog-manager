@@ -459,19 +459,37 @@ class DbManager:
 #     print(today == blog_date)
 #     print(len(blogs))
         
+        
+# if __name__ == "__main__":
+#     db_manager = DbManager('fuhafuha9')
+#     db_manager.insert_blog_record_with_id('now~')
+#     blogs = db_manager.get_all_blogs()
+#     today = datetime.now().date()
 
-if __name__ == "__main__":
-    db_manager = DbManager('fuhafuha9')
-    print(len(db_manager.get_all_blogs()))
-    daily_limit = 103
-    count = 0
-    today = datetime.now().date()
-    blogs = db_manager.get_all_blogs()
-    if blogs:
-        for blog in blogs:
-            blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
-            if today == blog_date:
-                count += 1
-    if count > daily_limit:
-        # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
-        print('백명이 넘었습니다!!')
+#     for blog in blogs:
+#         blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+#         print(blog["created_date"])
+#         print(today)
+#         print(today == blog_date)
+
+
+# if __name__ == "__main__":
+#     db_manager = DbManager('fuhafuha9')
+#     # print(len(db_manager.get_all_blogs()))
+#     daily_limit = 103
+#     count = 0
+#     today = datetime.now().date()
+#     blogs = db_manager.get_all_blogs()
+#     if blogs:
+#         for blog in blogs:
+#             blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+#             if today == blog_date:
+#                 print(today)
+#                 print(blog_date)
+#                 print('카운트 더해짐!')
+#                 count += 1
+#     if count > daily_limit:
+#         # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+#         print('백명이 넘었습니다!!')
+#     else:
+#         print(f'지금 카운트는 {count} 입니다.')
