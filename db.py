@@ -87,7 +87,7 @@ class DbManager:
 
         if existing_blog:
             print(f"Blog with ID {blog_id} already exists. Skipping insertion.")
-            return
+            return False
 
         sql_insert_blog = """
             INSERT INTO BlogTable (blog_id)
@@ -96,7 +96,7 @@ class DbManager:
         self.c.execute(sql_insert_blog, (blog_id,))
         self.con.commit()
         print(f"Blog with ID {blog_id} inserted successfully.")
-
+        return True
         # BlogTable에 blog_id 저장하는 함수, id 중복 확인하기 기능 추가하기
     def insert_blogs_record_with_ids(self, blog_ids):
         count = 0
@@ -461,6 +461,17 @@ class DbManager:
         
 
 if __name__ == "__main__":
-    db_manager = DbManager()
-    for i in range(100):
-        db_manager.insert_blog_record_with_id(f'test{i}')
+    db_manager = DbManager('fuhafuha9')
+    print(len(db_manager.get_all_blogs()))
+    daily_limit = 103
+    count = 0
+    today = datetime.now().date()
+    blogs = db_manager.get_all_blogs()
+    if blogs:
+        for blog in blogs:
+            blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+            if today == blog_date:
+                count += 1
+    if count > daily_limit:
+        # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+        print('백명이 넘었습니다!!')

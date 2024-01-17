@@ -99,6 +99,7 @@ class InitializeThread(QThread):
 
 class CollectBlogBySearchThread(QThread):
     finished_signal = pyqtSignal()
+
     interrupt_signal = False
 
     def __init__(self, driver, search_keyword, db_name, parent=None):
@@ -108,19 +109,21 @@ class CollectBlogBySearchThread(QThread):
         self.db_name = db_name
 
     def run(self):
-        db_instance = DbManager(self.db_name)
+        db_manager = DbManager(self.db_name)
 
         count = 0
-        daily_limit = 1000
+        daily_limit = 100
         today = datetime.now().date()
-        blogs = db_instance.get_all_blogs()
+        blogs = db_manager.get_all_blogs()
         if blogs:
             for blog in blogs:
                 blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
                 if today == blog_date:
                     count += 1
-        if count > daily_limit:
+        if count >= daily_limit:
             # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+            print('오늘 수집한 블로그가 100개를 넘었습니다.')
+            close_all_tabs(self.driver)
             return
         
         open_new_window(self.driver)
@@ -151,15 +154,12 @@ class CollectBlogBySearchThread(QThread):
                         both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
                         # 만약 서이추가 가능한 사람일 경우
                         if both_buddy_radio.get_attribute("ng-disabled") == "false":
-                            db_instance.insert_blog_record_with_id(blog_id)
-                            count += 1
+                            if db_manager.insert_blog_record_with_id(blog_id):
+                                count += 1
 
-                            if count > daily_limit:
-                                close_current_window(self.driver)
-                                rand_sleep()
-                                close_current_window(self.driver)
-
-                                # 이곳에서 오늘 100명이 끝났다는 알림을 보내야함!
+                            if count >= daily_limit:
+                                close_all_tabs(self.driver)
+                                print("오늘 100명을 모두 수집했습니다.")
                                 return
                     except Exception as e:
                         pass
@@ -176,169 +176,125 @@ class CollectBlogBySearchThread(QThread):
                 break
         close_current_window(self.driver)
 
-def get_blogs_by_search(driver, search_keyword):
-    db_instance = DbManager()
 
-    count = 0
-    today = datetime.now().date()
-    blogs = db_instance.get_all_blogs()
-    if blogs:
-        for blog in blogs:
-            blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
-            if today == blog_date:
-                count += 1
-    if count > 100:
-        # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
-        return
-    
-    open_new_window(driver)
-    get_page(driver, BLOG_MAIN_URL)
+class CollectBlogByCategoryThread(QThread):
+    finished_signal = pyqtSignal()
+    interrupt_signal = False
 
-    # 블로그 검색창에 입력
-    search_bar_element = driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/div/input')
-    key_in(search_bar_element, search_keyword)
-    search_button_element = driver.find_element(By.XPATH, '//*[@id="header"]/div[1]/div/div[2]/form/fieldset/a[1]')
-    click(search_button_element)
+    def __init__(self, driver, main_category, sub_category, db_name, parent=None):
+        super().__init__(parent)
+        self.driver = driver
+        self.main_category = main_category
+        self.sub_category = sub_category
+        self.db_name = db_name
 
-    while True:
-        # 검색결과의 페이지 별 순회
-        for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
-            # 검색결과 내 Blog를 순회
-            for author in driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
-                blog_id = author.get_attribute("href").split("/")[3]
-                # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
-                blog_url = "https://m.blog.naver.com/" + blog_id
-                open_new_window(driver)
-                get_page(driver, blog_url)
-                try:
-                    add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
-                    click(add_neighbor_button)
-                    both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
-                    # 만약 서이추가 가능한 사람일 경우
-                    if both_buddy_radio.get_attribute("ng-disabled") == "false":
-                        db_instance.insert_blog_record_with_id(blog_id)
-                        count += 1
+    def run(self):
+        db_manager = DbManager(self.db_name)
 
-                        if count > 100:
-                            close_current_window(driver)
-                            rand_sleep()
-                            close_current_window(driver)
+        count = 0
+        daily_limit = 103
 
-                            # 이곳에서 오늘 100명이 끝났다는 알림을 보내야함!
-                            return
-                except Exception as e:
-                    # 이 경우는 이미 이웃
-                    pass
+        today = datetime.now().date()
+        blogs = db_manager.get_all_blogs()
+        if blogs:
+            for blog in blogs:
+                blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
+                if today == blog_date:
+                    count += 1
 
-                # 이제 열었던 창을 닫아야 함.
-                close_current_window(driver)
+        if count >= daily_limit:
+            close_all_tabs(self.driver)
+            print('오늘 수집한 블로그가 100개를 넘었습니다.')
+            # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+            return
 
-            if (i + 1) != len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
-                page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
-                click(page_next_number_button)
-        try:
-            page_next_button = driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
-            click(page_next_button)
-        except NoSuchElementException as e:
-            logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
-            break
-    close_current_window(driver)
-    
+        open_new_window(self.driver)
+        get_page(self.driver, BLOG_MAIN_URL)
 
+        category_discovery_button = self.driver.find_element(By.XPATH, '//*[@id="lnbMenu"]/a[2]')
+        click(category_discovery_button)
 
-def get_blogs_by_category(driver, main_category, sub_category):
-    db_instance = DbManager()
+        main_category_xpath = f"//a[contains(@bg-nclick, '{MAIN_CATEGORIES[self.main_category]}')]"
+        main_category_element = WebDriverWait(self.driver, 1000).until(
+            EC.element_to_be_clickable((By.XPATH, main_category_xpath))
+        )
+        main_category_element.click()
+        rand_sleep(300, 500)
+        sub_category_css_selector = f".navigator_category_sub [bg-nclick='{SUB_CATEGORIES[self.sub_category]}']"
+        sub_category_element = WebDriverWait(self.driver, 1000).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, sub_category_css_selector))
+        )
+        click(sub_category_element)
 
-    count = 0
-    today = datetime.now().date()
-    blogs = db_instance.get_all_blogs()
-    if blogs:
-        for blog in blogs:
-            blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
-            if today == blog_date:
-                count += 1
-
-    if count > 100:
-        # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
-        return
-
-    open_new_window(driver)
-    get_page(driver, BLOG_MAIN_URL)
-
-    category_discovery_button = driver.find_element(By.XPATH, '//*[@id="lnbMenu"]/a[2]')
-    click(category_discovery_button)
-
-    main_category_xpath = f"//a[contains(@bg-nclick, '{MAIN_CATEGORIES[main_category]}')]"
-    main_category_element = WebDriverWait(driver, 1000).until(
-        EC.element_to_be_clickable((By.XPATH, main_category_xpath))
-    )
-    main_category_element.click()
-    rand_sleep(300, 500)
-    sub_category_css_selector = f".navigator_category_sub [bg-nclick='{SUB_CATEGORIES[sub_category]}']"
-    sub_category_element = WebDriverWait(driver, 1000).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, sub_category_css_selector))
-    )
-    click(sub_category_element)
-
-    while True:
-        # 검색결과의 페이지 별 순회
-        for i in range(0, len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
-            # 검색결과 내 Blog를 순회
-            for post_index in range(len(driver.find_elements(By.CSS_SELECTOR,
-                                                             ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
-                post = \
-                driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[
-                    post_index]
-                post_link_splat = post.get_attribute("href").split("/")
-                blog_id = post_link_splat[3]
-                post_id = post_link_splat[4]
-                liked_link = f'https://m.blog.naver.com/SympathyHistoryList.naver?blogId={blog_id}&logNo={post_id}&categoryId=POST'
-                open_new_window(driver)
-                get_page(driver, liked_link)
-                rand_sleep(3000, 5000)
-                for blog_description in driver.find_elements(By.CSS_SELECTOR,
-                                                             ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
-                    blog_id = blog_description.get_attribute("href").split("/")[3]
-                    # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
-                    blog_url = "https://m.blog.naver.com/" + blog_id
-                    open_new_window(driver)
-                    get_page(driver, blog_url)
-                    try:
-                        add_neighbor_button = driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
-                        click(add_neighbor_button)
-                        both_buddy_radio = driver.find_element(By.ID, "bothBuddyRadio")
-                        # 만약 서이추가 가능한 사람일 경우
-                        if both_buddy_radio.get_attribute("ng-disabled") == "false":
-                            db_instance.insert_blog_record_with_id(blog_id)
-                    except Exception as e:
-                        # 이 경우는 이미 이웃
-                        pass
-                    # 서로이웃 확인했던 창 끄기.
-                    close_current_window(driver)
-
-                # 포스트 공감창 끄기
-                close_current_window(driver)
-            if (i + 1) < len(driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
-                page_next_number_button = driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
-                click(page_next_number_button)
-        try:
-            page_next_button = driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
-            click(page_next_button)
-        except NoSuchElementException as e:
-            logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
-            break
+        while True:
+            # 검색결과의 페이지 별 순회
+            for i in range(0, len(self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
+                # 검색결과 내 Blog를 순회
+                for post_index in range(len(self.driver.find_elements(By.CSS_SELECTOR,
+                                                                ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
+                    if self.interrupt_signal:
+                        close_all_tabs(self.driver)
+                        return                     
+                    post = self.driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[
+                        post_index]
+                    post_link_splat = post.get_attribute("href").split("/")
+                    blog_id = post_link_splat[3]
+                    post_id = post_link_splat[4]
+                    liked_link = f'https://m.blog.naver.com/SympathyHistoryList.naver?blogId={blog_id}&logNo={post_id}&categoryId=POST'
+                    open_new_window(self.driver)
+                    get_page(self.driver, liked_link)
+                    rand_sleep(3000, 5000)
+                    for blog_description in self.driver.find_elements(By.CSS_SELECTOR,
+                                                                ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
+                        if self.interrupt_signal:
+                            close_all_tabs(self.driver)
+                            return                        
+                        blog_id = blog_description.get_attribute("href").split("/")[3]
+                        # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
+                        blog_url = "https://m.blog.naver.com/" + blog_id
+                        open_new_window(self.driver)
+                        get_page(self.driver, blog_url)
+                        try:
+                            add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                            click(add_neighbor_button)
+                            both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
+                            # 만약 서이추가 가능한 사람일 경우
+                            if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                                if db_manager.insert_blog_record_with_id(blog_id):
+                                    count += 1
+                                
+                                if count >= daily_limit:
+                                    close_all_tabs(self.driver)
+                                    print("오늘 100명을 모두 수집했습니다.")
+                                    return
+                        except Exception as e:
+                            # 이 경우는 이미 이웃
+                            pass
+                        # 서로이웃 확인했던 창 끄기.
+                        close_current_window(self.driver)
+                    # 포스트 공감창 끄기
+                    close_current_window(self.driver)
+                if (i + 1) < len(self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a")):
+                    page_next_number_button = self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a")[i + 1]
+                    click(page_next_number_button)
+            try:
+                page_next_button = self.driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
+                click(page_next_button)
+            except NoSuchElementException as e:
+                logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
+                break
 
 
 def neighbor_request_logic(driver):
-    db_instance = DbManager()
-    all_blogs = db_instance.get_all_blogs()
-    all_posts = db_instance.get_all_blog_posts()
+    db_manager = DbManager()
+    all_blogs = db_manager.get_all_blogs()
+    all_posts = db_manager.get_all_blog_posts()
 
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     neighbor_request_count = 0
     today = datetime.now().date()
-    blogs = db_instance.get_all_blogs()
+    blogs = db_manager.get_all_blogs()
     if blogs:
         for blog in blogs:
             blog_date = datetime.strptime(blog['neighbor_request_date'], "%Y-%m-%d %H:%M:%S").date()
@@ -384,7 +340,7 @@ def neighbor_request_logic(driver):
 
                 # Update neighbor_request_date in sql_blog_table to today's date
                 blog["neighbor_request_date"] = now
-                db_instance.update_blog(blog)
+                db_manager.update_blog(blog)
 
             else:
                 filtered_posts = [
@@ -408,7 +364,7 @@ def neighbor_request_logic(driver):
                         else:
                             if not filtered_posts:  # 만약 필터링된 포스터 테이블이 비어 있다면 새로운 post_id를 추가
                                 new_post = {'blog_post_id': blog['blog_id'], 'post_id': recent_post_id, 'is_liked': False, 'written_comment': ''}
-                                db_instance.update_blog(new_post)
+                                db_manager.update_blog(new_post)
 
                             driver.get(blog_url + '/' + recent_post_id)
                             driver.find_element(By.XPATH,
@@ -460,8 +416,8 @@ def neighbor_request_logic(driver):
                                 # 댓글 작성 완료 메시지 출력
                                 print("댓글을 작성했습니다.")
 
-                                db_instance.update_blog(blog)
-                                db_instance.update_post(post)
+                                db_manager.update_blog(blog)
+                                db_manager.update_post(post)
 
                                 close_current_window(driver)
                             except Exception as e:
@@ -472,7 +428,7 @@ def neighbor_request_logic(driver):
                 # Update neighbor_request_current to False
                 blog["neighbor_request_current"] = 0
                 blog["neighbor_request_rmv"] = 1
-                db_instance.update_blog(blog)
+                db_manager.update_blog(blog)
             else:
                 continue
 

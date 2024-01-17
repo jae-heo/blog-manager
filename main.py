@@ -121,7 +121,11 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             self.search_sub_category_text: QComboBox
             main_category = self.search_main_category_text.currentText()
             sub_category = self.search_sub_category_text.currentText()
-            get_blogs_by_category(self.driver, main_category, sub_category)
+
+            collect_blogs_by_category_thread = CollectBlogByCategoryThread(self.driver, main_category, sub_category, self.username)
+            self.thread_dict['collect_blogs_by_category_thread'] = collect_blogs_by_category_thread
+            collect_blogs_by_category_thread.start()
+            time.sleep(1)
         except Exception as e:
             logging.getLogger("main").error(e)
 
