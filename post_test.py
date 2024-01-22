@@ -17,7 +17,7 @@ from collections import defaultdict
 from custom_func import get_chrome_driver, get_page
 
 # Function to fetch URLs and keywords from Naver based on a search quer
-client = OpenAI(api_key= "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")
+client = OpenAI(api_key= "")
 
 def fetch_urls(search_query):
     service = Service(ChromeDriverManager().install())
