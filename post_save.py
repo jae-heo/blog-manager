@@ -93,8 +93,9 @@ class PostSaveThread(QThread):
     finished_signal = pyqtSignal()
     interrupt_signal = False
 
-    def __init__(self, driver, db_name):
+    def __init__(self, driver, username):
         self.driver = driver
+        self.username = username
 
     def run(self):
         # Integration
@@ -239,22 +240,9 @@ class PostSaveThread(QThread):
             close_all_tabs(self.driver)
             return
 
-        driver = webdriver.Chrome()
+        url = f'https://blog.naver.com/{self.username}/postwrite'
 
-        get_page(driver, NAVER_LOGIN_URL)
-
-        id_text_field = driver.find_element(By.CSS_SELECTOR, '#id')
-        key_in(id_text_field, DEV_ID)
-
-        pw_text_field = driver.find_element(By.CSS_SELECTOR, '#pw')
-        key_in(pw_text_field, DEV_PW)
-
-        login_button = driver.find_element(By.XPATH, '//*[@id="log.login"]')
-        click(login_button)
-
-        url = f'https://blog.naver.com/{DEV_ID}/postwrite'
-
-        driver.get(url)
+        self.driver.get(url)
 
         rand_sleep(800, 900)
         if self.interrupt_signal:
@@ -262,13 +250,13 @@ class PostSaveThread(QThread):
             return
 
         try:
-            reload_close_button = driver.find_element(By.CSS_SELECTOR, '.se-popup-button-cancel')
+            reload_close_button = self.driver.find_element(By.CSS_SELECTOR, '.se-popup-button-cancel')
             click(reload_close_button)
         except Exception as e:
             pass
         rand_sleep(400, 500)
         try:
-            ad_close_button = driver.find_element(By.CSS_SELECTOR, '.se-help-panel-close-button')
+            ad_close_button = self.driver.find_element(By.CSS_SELECTOR, '.se-help-panel-close-button')
             click(ad_close_button)
         except Exception as e:
             pass
@@ -276,30 +264,30 @@ class PostSaveThread(QThread):
             close_all_tabs(self.driver)
             return
         rand_sleep(400, 500)
-        title_field_click = driver.find_element(By.CSS_SELECTOR, '.se-documentTitle div div div p')
+        title_field_click = self.driver.find_element(By.CSS_SELECTOR, '.se-documentTitle div div div p')
         click(title_field_click)
         rand_sleep(400, 500)
-        ActionChains(driver).send_keys(generated_title).perform()
+        ActionChains(self.driver).send_keys(generated_title).perform()
         rand_sleep(400, 500)
-        content_field_click = driver.find_element(By.CSS_SELECTOR, '.se-component-content div div div p.se-text-paragraph')
+        content_field_click = self.driver.find_element(By.CSS_SELECTOR, '.se-component-content div div div p.se-text-paragraph')
         click(content_field_click)
         rand_sleep(400, 500)
-        ActionChains(driver).send_keys(introduction).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(introduction).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
         rand_sleep(400, 500)
-        ActionChains(driver).send_keys(first_subtitle).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(first_subtitle).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
         rand_sleep(400, 500)
-        ActionChains(driver).send_keys(second_subtitle).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
-        ActionChains(driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(second_subtitle).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
         rand_sleep(400, 500)
-        ActionChains(driver).send_keys(third_subtitle).perform()
+        ActionChains(self.driver).send_keys(third_subtitle).perform()
         rand_sleep(400, 500)
-        save_button_click = driver.find_element(By.CSS_SELECTOR, '.save_btn___RzjY')
+        save_button_click = self.driver.find_element(By.CSS_SELECTOR, '.save_btn___RzjY')
         click(save_button_click)

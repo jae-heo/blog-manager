@@ -203,18 +203,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
             current_time = datetime.now().strftime('%H:%M:%S')
 
-            get_page(self.driver, NAVER_LOGIN_URL)
-
-            id_text_field = self.driver.find_element(By.CSS_SELECTOR, '#id')
-            key_in(id_text_field, DEV_ID)
-
-            pw_text_field = self.driver.find_element(By.CSS_SELECTOR, '#pw')
-            key_in(pw_text_field, DEV_PW)
-
-            login_button = self.driver.find_element(By.XPATH, '//*[@id="log.login"]')
-            click(login_button)
-
-            url = f'https://admin.blog.naver.com/BuddyGroupManage.naver?blogId={DEV_ID}'
+            url = f'https://admin.blog.naver.com/BuddyGroupManage.naver?blogId={self.username}'
 
             self.driver.get(url)
 
