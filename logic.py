@@ -297,7 +297,8 @@ class NeighborRequestLogicThread(QThread):
     finished_signal = pyqtSignal()
     interrupt_signal = False
 
-    def __init__(self, driver, db_name):
+    def __init__(self, driver, db_name, parent=None):
+        super().__init__(parent)
         self.driver = driver
         self.db_name = db_name
 

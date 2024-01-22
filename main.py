@@ -4,6 +4,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 from logic import *
 from PyQt5 import uic
+from post_save import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
 from db import DbManager
@@ -33,6 +34,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.stop_button: QPushButton
         self.pause_button: QPushButton
         self.test_button: QPushButton
+        self.post_save_button: QPushButton
         self.neighbor_request_progress_bar: QProgressBar
         self.neighbor_request_percent: QLabel
         self.neighbor_request_today_current_listView: QListView
@@ -47,6 +49,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.stop_button.clicked.connect(self.stop)
         self.pause_button.clicked.connect(self.pause)
         self.test_button.clicked.connect(self.today_neighbor_request_current)
+        self.post_save_button.clicked.connect(self.post_save)
 
         self.neighbor_request_model = QStandardItemModel()
         self.neighbor_request_current_listView.setModel(self.neighbor_request_model)
@@ -245,6 +248,18 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             print(f"Error: {e}, 여기임")
 
         close_all_tabs(self.driver)
+
+    def post_save(self):
+        try:
+            self.search_keyword_text: QLineEdit
+            search_keyword = self.search_keyword_text.text()
+
+            post_save_thread = PostSaveThread(self.driver, search_keyword, self.username)
+            self.thread_dict['post_save_thread'] =post_save_thread
+            post_save_thread.start()
+        except Exception as e:
+            logging.getLogger("main").error(e)
+
 
 
 if __name__ == "__main__":

@@ -93,13 +93,15 @@ class PostSaveThread(QThread):
     finished_signal = pyqtSignal()
     interrupt_signal = False
 
-    def __init__(self, driver, username):
+    def __init__(self, driver, keyword, username, parent=None):
+        super().__init__(parent)
         self.driver = driver
         self.username = username
+        self.keyword = keyword
 
     def run(self):
         # Integration
-        search_query = input("키워드를 입력해주세요: ")
+        search_query = self.keyword
         url_data = fetch_urls(search_query)
         all_scraped_data = scrape_blogs(url_data)
         if self.interrupt_signal:
