@@ -2,8 +2,6 @@
 from selenium.webdriver import ActionChains
 
 from logic import *
-import content
-import self
 from gensim.summarization.summarizer import summarize
 from bs4 import BeautifulSoup
 import requests
@@ -19,7 +17,7 @@ from collections import defaultdict
 from custom_func import get_chrome_driver, get_page
 
 # Function to fetch URLs and keywords from Naver based on a search quer
-client = OpenAI(api_key= "")
+client = OpenAI(api_key= "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")
 
 def fetch_urls(search_query):
     service = Service(ChromeDriverManager().install())
