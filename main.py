@@ -82,8 +82,9 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             self.username = username
 
             login_thread = LoginThread(self.driver, username, password, self.username)
-            self.thread_dict['login_thread'] = login_thread
+            # self.thread_dict['login_thread'] = login_thread
             login_thread.finished_signal.connect(lambda: self.after_login(login_thread.blog_exist))
+            
             login_thread.start()
             time.sleep(1)
             print('login_ends')
@@ -125,6 +126,15 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             self.thread_dict['collect_blogs_by_category_thread'] = collect_blogs_by_category_thread
             collect_blogs_by_category_thread.start()
             time.sleep(1)
+        except Exception as e:
+            logging.getLogger("main").error(e)
+
+    def neighbor_request(self):
+        try:
+            neighbor_request_logic_thread = NeighborRequestLogicThread(self.driver, self.username)
+            self.thread_dict['neighbor_request_logic_thread'] = neighbor_request_logic_thread
+            # neighbor_request_logic_thread.finished_signal.connect(alarm("끝났습니다"))
+            neighbor_request_logic_thread.start()
         except Exception as e:
             logging.getLogger("main").error(e)
 
