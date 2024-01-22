@@ -38,8 +38,8 @@ class DbManager:
                         like_count INTEGER DEFAULT 0 NOT NULL,
                         today_list_update INTEGER DEFAULT 0 NOT NULL,
                         neighbor_request_date DATE,
-                        neighbor_request_current DEFAULT FALSE NOT NULL,
-                        neighbor_request_rmv DEFAULT FALSE NOT NULL,
+                        neighbor_request_current INTEGER DEFAULT 0 NOT NULL,
+                        neighbor_request_rmv INTEGER DEFAULT 0 NOT NULL,
                         created_date DATE DEFAULT CURRENT_TIMESTAMP NOT NULL,
                         updated_date DATE DEFAULT CURRENT_TIMESTAMP NOT NULL
                     );
@@ -55,7 +55,7 @@ class DbManager:
                         post_name TEXT NOT NULL,
                         post_body TEXT NOT NULL,
                         written_comment TEXT NOT NULL,
-                        is_liked BOOLEAN DEFAULT FALSE NOT NULL,
+                        is_liked BOOLEAN INTEGER DEFAULT 0 NOT NULL,
                         created_date DATE DEFAULT CURRENT_DATE NOT NULL,
                         updated_date DATE DEFAULT CURRENT_DATE NOT NULL
                     );
@@ -173,7 +173,7 @@ class DbManager:
         sql_get_true_blog_neighbor_request_count = "SELECT COUNT(*) FROM BlogTable WHERE neighbor_request_current = ?"
         # True인 경우만 count
         true_count = 0
-        self.c.execute(sql_get_true_blog_neighbor_request_count, (True,))
+        self.c.execute(sql_get_true_blog_neighbor_request_count, (1,))
         true_count += self.c.fetchone()[0]
 
         return true_count
@@ -226,7 +226,7 @@ class DbManager:
 
     # BlogTable의 neighbor_request_current 업데이트
     def update_neighbor_request_current(self, blog_id, neighbor_request_status):
-        if neighbor_request_status not in [True, False]:
+        if neighbor_request_status not in [1, 0]:
             print("잘못된 neighbor_request_status입니다. True 또는 False를 입력하세요.")
             return
 
@@ -240,7 +240,7 @@ class DbManager:
 
     #이웃 신청 삭제 확인
     def update_neighbor_request_rmv(self, blog_id, neighbor_request_status):
-        if neighbor_request_status not in [True, False]:
+        if neighbor_request_status not in [1, 0]:
             print("잘못된 neighbor_request_status입니다. True 또는 False를 입력하세요.")
             return
 

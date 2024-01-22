@@ -1,6 +1,5 @@
 import sys
 
-import requests
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 from logic import *

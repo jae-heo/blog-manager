@@ -370,7 +370,7 @@ def neighbor_request_logic(driver):
                                 break
                         else:
                             if not filtered_posts:  # 만약 필터링된 포스터 테이블이 비어 있다면 새로운 post_id를 추가
-                                new_post = {'blog_post_id': blog['blog_id'], 'post_id': recent_post_id, 'is_liked': False, 'written_comment': ''}
+                                new_post = {'blog_post_id': blog['blog_id'], 'post_id': recent_post_id, 'is_liked': 0, 'written_comment': ''}
                                 db_manager.update_blog(new_post)
 
                             driver.get(blog_url + '/' + recent_post_id)
@@ -387,18 +387,12 @@ def neighbor_request_logic(driver):
                             except Exception:  # 간혹 공감 버튼 자체가 없는 게시글이 존재함
                                 print('공감 버튼 없음')
                                 continue
-                            if is_like == 'false':  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
+                            if is_like == 0:  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
                                 driver.find_element(by='xpath',
                                                     value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
                                 rand_sleep(450, 550)
                                 blog['like_count'] += 1
-                                post['is_liked'] = True
-                            try:
-                                rand_sleep(950, 1050)
-                                alert = Alert(driver)  # 팝업창으로 메시지 뜰 경우를 대비
-                                alert.accept()
-                            except Exception:
-                                continue
+                                post['is_liked'] = 1
 
                             # 댓글 확인
                             # 클릭할 부분을 xpath로 찾아서 클릭
@@ -407,9 +401,14 @@ def neighbor_request_logic(driver):
                                 click_button.click()
 
                                 # 댓글 입력란을 찾아서 내용 입력
+                                comment_input_1 = driver.find_element(By.XPATH,
+                                                                      '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
+                                click(comment_input_1)
+
                                 rand_sleep(450, 550)
-                                comment_input = driver.find_element(By.XPATH,
-                                                                    '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
+                                comment_input = driver.find_element(By.XPATH, '//*[@id="naverComment__write_textarea"]')
+                                click(comment_input)
+                                rand_sleep(450, 550)
                                 comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
                                 blog['comment_count'] += 1
                                 post['written_comment'] = comment_input.get_attribute('좋은 글 감사합니다!')
