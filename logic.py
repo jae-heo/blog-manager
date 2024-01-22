@@ -95,7 +95,6 @@ class InitializeThread(QThread):
                 break
 
         db_manager.insert_blogs_record_with_ids(buddy_ids)
-
         blogs = db_manager.get_all_blogs()
         for blog in blogs:
             created_date = blog['created_date']
@@ -103,6 +102,8 @@ class InitializeThread(QThread):
             blog['created_date'] = created_date - timedelta(days=1)
             db_manager.update_blog(blog)
         close_current_window(self.driver)
+        self.finished_signal.emit()
+
 
 class CollectBlogBySearchThread(QThread):
     finished_signal = pyqtSignal()

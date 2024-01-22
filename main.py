@@ -14,6 +14,10 @@ from selenium.common import NoSuchElementException
 from selenium.webdriver import *
 from selenium.webdriver.common.by import By
 
+
+# 개발 해야할것
+# 1. 기능 작동시 중지/종료 빼고 전부 Disable 하기
+# 2. 사용자가 기능이 작동중인 것을 알 수 있도록 하단에 ~~기능 작동중 . .. ... 등을 만들어야함
 class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
     def __init__(self):
         super().__init__()
@@ -92,15 +96,23 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             logging.getLogger("main").error(e)
 
     def after_login(self, blog_exist):
+        # 만약 사용자가 첫 로그인이라면
         if not blog_exist:
             print('initializing begins')
             initialize_thread = InitializeThread(self.driver, self.username, self.username)
             self.thread_dict['initialize_thread'] = initialize_thread
-            initialize_thread.finished_signal.connect(lambda: self.after_initialize)
+            initialize_thread.finished_signal.connect(lambda: self.after_initialize())
             initialize_thread.start()
             time.sleep(1)
+        else:
+            self.today_neighbor_request_current()
+            self.reload_data()
+            pass
+            
 
     def after_initialize(self):
+        self.today_neighbor_request_current()
+        self.reload_data()
         print('initializing ends')
 
     def collect_by_search(self):
@@ -110,6 +122,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
             collect_blogs_by_search_thread = CollectBlogBySearchThread(self.driver, search_keyword, self.username)
             self.thread_dict['collect_blogs_by_search_thread'] = collect_blogs_by_search_thread
+            collect_blogs_by_search_thread.finished_signal.connect(lambda: self.today_neighbor_request_current())
             collect_blogs_by_search_thread.start()
             time.sleep(1)
         except Exception as e:
@@ -124,6 +137,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
             collect_blogs_by_category_thread = CollectBlogByCategoryThread(self.driver, main_category, sub_category, self.username)
             self.thread_dict['collect_blogs_by_category_thread'] = collect_blogs_by_category_thread
+            collect_blogs_by_category_thread.finished_signal.connect(lambda: self.today_neighbor_request_current())
             collect_blogs_by_category_thread.start()
             time.sleep(1)
         except Exception as e:
@@ -200,21 +214,16 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
     def today_neighbor_request_current(self):
         try:
-
             current_time = datetime.now().strftime('%H:%M:%S')
-
             url = f'https://admin.blog.naver.com/BuddyGroupManage.naver?blogId={self.username}'
-
             self.driver.get(url)
-
             # tr 요소들을 XPath를 통해 가져옵니다.
             tr_elements = self.driver.find_elements(By.XPATH, '//*[@id="wrap"]/table/tbody/tr')
-
             # tr 개수를 출력합니다.
             tr_count = len(tr_elements)
             print(f"Number of tr elements: {tr_count}")
-
             total_value = 0
+
             for i in range(tr_count):
                 xpath = f'//*[@id="wrap"]/table/tbody/tr[{i + 1}]/td[4]/span'
                 span_element = self.driver.find_element(By.XPATH, xpath)
@@ -223,21 +232,19 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
             new_item = QStandardItem(f"{current_time} : {total_value}")
             self.neighbor_request_today_model.appendRow(new_item)
-
             if current_time == "00-00-00":
                 self.neighbor_request_today_model.clear()
             #바
             total_items = 5000.0
             progress_percentage = (total_value / total_items) * 100
-
             # Set progress bar value
             self.neighbor_request_progress_bar.setValue(int(progress_percentage))
-
             # Set progress label text
             self.neighbor_request_percent.setText(f"{total_value} / 5000")
-
         except Exception as e:
             print(f"Error: {e}, 여기임")
+
+        close_all_tabs(self.driver)
 
 
 if __name__ == "__main__":
