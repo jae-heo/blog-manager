@@ -331,6 +331,9 @@ class NeighborRequestLogicThread(QThread):
                     add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
                     click(add_neighbor_button)
                     try:
+                        if self.interrupt_signal:
+                            close_all_tabs(self.driver)
+                            return
                         if neighbor_request_count > 100:
                             continue
                         both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
@@ -339,13 +342,13 @@ class NeighborRequestLogicThread(QThread):
                             # 서이추 버튼 클릭
                             click(both_buddy_radio)
                             # 서이추 메세지 입력
-                            neighbor_request_message_text_area = driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
+                            neighbor_request_message_text_area = self.driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
                             clear(neighbor_request_message_text_area)
 
                             #이부분에 서이추 메세지 추가해야함!!!
                             neighbor_request_message = "안녕하세요 저희 서이추 해요 ^^"
                             key_in(neighbor_request_message_text_area, neighbor_request_message)
-                            neighbor_request_button = driver.find_element(By.CLASS_NAME, "btn_ok")
+                            neighbor_request_button = self.driver.find_element(By.CLASS_NAME, "btn_ok")
                             click(neighbor_request_button)
 
                             neighbor_request_count += 1
@@ -354,13 +357,19 @@ class NeighborRequestLogicThread(QThread):
                         # 이경우는 이미 서이추가 되어있는 사람이라서 그냥 넘어가는 것으로..
                         pass
                     # 이제 열었던 창을 닫아야 함.
-                    close_current_window(driver)
+                    close_current_window(self.driver)
 
                     # Update neighbor_request_date in sql_blog_table to today's date
                     blog["neighbor_request_date"] = now
                     db_manager.update_blog(blog)
+                    if self.interrupt_signal:
+                        close_all_tabs(self.driver)
+                        return
 
                 else:
+                    if self.interrupt_signal:
+                        close_all_tabs(self.driver)
+                        return
                     filtered_posts = [
                         post for post in all_posts
                         if post.get("blog_post_id") == blog
@@ -371,7 +380,10 @@ class NeighborRequestLogicThread(QThread):
 
                     if filtered_posts:
                         while True:
-                            recent_post_id = get_post_id(driver, blog_url, current_xpath)
+                            if self.interrupt_signal:
+                                close_all_tabs(self.driver)
+                                return
+                            recent_post_id = get_post_id(self.driver, blog_url, current_xpath)
                             for post in filtered_posts:
                                 if recent_post_id == post.get("post_id"):
                                     current_index = int(current_xpath.split('/')[-1][:-1])
@@ -384,14 +396,17 @@ class NeighborRequestLogicThread(QThread):
                                     new_post = {'blog_post_id': blog['blog_id'], 'post_id': recent_post_id, 'is_liked': 0, 'written_comment': ''}
                                     db_manager.update_blog(new_post)
 
-                                driver.get(blog_url + '/' + recent_post_id)
-                                driver.find_element(By.XPATH,
+                                self.driver.get(blog_url + '/' + recent_post_id)
+                                self.driver.find_element(By.XPATH,
                                                     '//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[1]').click()
 
                                 # 좋아요 버튼 확인
                                 rand_sleep(450, 550)
                                 try:
-                                    is_like = driver.find_element(by='xpath',
+                                    if self.interrupt_signal:
+                                        close_all_tabs(self.driver)
+                                        return
+                                    is_like = self.driver.find_element(by='xpath',
                                                                 value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
                                         'aria-pressed')  # 좋아요 버튼 상태 확인
                                     # print(is_like)
@@ -399,25 +414,29 @@ class NeighborRequestLogicThread(QThread):
                                     print('공감 버튼 없음')
                                     continue
                                 if is_like == 0:  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
-                                    driver.find_element(by='xpath',
+                                    self.driver.find_element(by='xpath',
                                                         value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
                                     rand_sleep(450, 550)
                                     blog['like_count'] += 1
                                     post['is_liked'] = 1
 
+                                if self.interrupt_signal:
+                                    close_all_tabs(self.driver)
+                                    return
+
                                 # 댓글 확인
                                 # 클릭할 부분을 xpath로 찾아서 클릭
                                 try:
-                                    click_button = driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
+                                    click_button = self.driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
                                     click_button.click()
 
                                     # 댓글 입력란을 찾아서 내용 입력
-                                    comment_input_1 = driver.find_element(By.XPATH,
+                                    comment_input_1 = self.driver.find_element(By.XPATH,
                                                                         '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
                                     click(comment_input_1)
 
                                     rand_sleep(450, 550)
-                                    comment_input = driver.find_element(By.XPATH, '//*[@id="naverComment__write_textarea"]')
+                                    comment_input = self.driver.find_element(By.XPATH, '//*[@id="naverComment__write_textarea"]')
                                     click(comment_input)
                                     rand_sleep(450, 550)
                                     comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
@@ -426,7 +445,7 @@ class NeighborRequestLogicThread(QThread):
 
                                     # 댓글 작성 버튼을 찾아서 클릭
                                     rand_sleep(450, 550)
-                                    comment_button = driver.find_element(By.XPATH,
+                                    comment_button = self.driver.find_element(By.XPATH,
                                                                         '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
                                     comment_button.click()
 
@@ -435,8 +454,11 @@ class NeighborRequestLogicThread(QThread):
 
                                     db_manager.update_blog(blog)
                                     db_manager.update_post(post)
+                                    if self.interrupt_signal:
+                                        close_all_tabs(self.driver)
+                                        return
 
-                                    close_current_window(driver)
+                                    close_current_window(self.driver)
                                 except Exception as e:
                                     print(f"An error occurred: {str(e)}")
                                     # Handle the error as needed, e.g., logging or additional actions.
