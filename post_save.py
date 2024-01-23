@@ -293,3 +293,7 @@ class PostSaveThread(QThread):
         rand_sleep(400, 500)
         save_button_click = self.driver.find_element(By.CSS_SELECTOR, '.save_btn___RzjY')
         click(save_button_click)
+
+        close_current_window(self.driver)
+
+        self.finished_signal.emit()

@@ -473,6 +473,8 @@ class NeighborRequestLogicThread(QThread):
                 else:
                     continue
 
+            close_current_window(self.driver)
+
         self.finished_signal.emit()
 
 def neighbor_request_logic(driver):
@@ -620,6 +622,8 @@ def neighbor_request_logic(driver):
                 db_manager.update_blog(blog)
             else:
                 continue
+        close_current_window(driver)
+
 
 
 def get_post_id(driver, blog_url, current_xpath):
