@@ -4,7 +4,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 from logic import *
 from PyQt5 import uic
-from post_save import *
+# from post_save import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
 from db import DbManager
@@ -19,7 +19,7 @@ from selenium.webdriver.common.by import By
 # 개발 해야할것
 # 1. 기능 작동시 중지/종료 빼고 전부 Disable 하기
 # 2. 사용자가 기능이 작동중인 것을 알 수 있도록 하단에 ~~기능 작동중 . .. ... 등을 만들어야함
-class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
+class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -49,7 +49,9 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
         self.stop_button.clicked.connect(self.stop)
         self.pause_button.clicked.connect(self.pause)
         self.test_button.clicked.connect(self.today_neighbor_request_current)
-        self.post_save_button.clicked.connect(self.post_save)
+        # self.post_save_button.clicked.connect(self.post_save)
+        self.post_save_button.setVisible(False)
+        self.textBrowser.setVisible(False)
 
         self.neighbor_request_model = QStandardItemModel()
         self.neighbor_request_current_listView.setModel(self.neighbor_request_model)
@@ -81,16 +83,16 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
             self.username_text: QLineEdit
             self.password_text: QLineEdit
 
-            username = DEV_ID
-            password = DEV_PW
+            # username = DEV_ID
+            # password = DEV_PW
 
-            # username = self.username_text.text()
-            # password = self.password_text.text()
+            username = self.username_text.text()
+            password = self.password_text.text()
             self.username = username
 
             login_thread = LoginThread(self.driver, username, password, self.username)
             # self.thread_dict['login_thread'] = login_thread
-            login_thread.finished_signal.connect(lambda: self.after_login(login_thread.blog_exist))
+            # login_thread.finished_signal.connect(lambda: self.after_login(login_thread.blog_exist))
             
             login_thread.start()
             time.sleep(1)
@@ -188,7 +190,7 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
     def reload_data(self):
         try:
-            db_instance = DbManager()
+            db_instance = DbManager(self.username)
             all_blogs = db_instance.get_all_blogs()
             current_date = datetime.now().strftime('%Y-%m-%d')
 
@@ -249,16 +251,16 @@ class Program(QMainWindow, uic.loadUiType("TestUi.ui")[0]):
 
         close_all_tabs(self.driver)
 
-    def post_save(self):
-        try:
-            self.search_keyword_text: QLineEdit
-            search_keyword = self.search_keyword_text.text()
+    # def post_save(self):
+    #     try:
+    #         self.search_keyword_text: QLineEdit
+    #         search_keyword = self.search_keyword_text.text()
 
-            post_save_thread = PostSaveThread(self.driver, search_keyword, self.username)
-            self.thread_dict['post_save_thread'] =post_save_thread
-            post_save_thread.start()
-        except Exception as e:
-            logging.getLogger("main").error(e)
+    #         post_save_thread = PostSaveThread(self.driver, search_keyword, self.username)
+    #         self.thread_dict['post_save_thread'] =post_save_thread
+    #         post_save_thread.start()
+    #     except Exception as e:
+    #         logging.getLogger("main").error(e)
 
 
 
