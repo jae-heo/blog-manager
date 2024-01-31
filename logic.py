@@ -305,37 +305,51 @@ class NeighborRequestThread(QThread):
     def run(self):
         db_manager = DbManager(self.db_name)
         blogs = db_manager.get_all_blogs()
+        request_count = 0
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        date = datetime.now().date()
         if blogs:
             for blog in blogs:
-                if self.interrupt_signal:
+                if blog['neighbor_request_date']:
+                    neighbor_request_date = datetime.strptime(blog['neighbor_request_date'], "%Y-%m-%d %H:%M:%S")
+                    if neighbor_request_date == date:
+                        request_count += 1
+
+            for blog in blogs:
+                if self.interrupt_signal or request_count >= 100:
                         close_all_tabs(self.driver)
-                        return  
+                        return 
                 # 현재 이웃신청이 되지 않은 블로그 중
-                if not blog["neighbor_request_current"]:
+                if blog["neighbor_request_current"] == 0:
                     # 이웃신청 조건이 완료된 경우
-                    if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
-                        blog_url = "https://m.blog.naver.com/" + blog['blog_id']
-                        open_new_window(self.driver)
-                        get_page(self.driver, blog_url)
-                        add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
-                        click(add_neighbor_button)
-                        try:
-                            both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
-                            # 만약 서이추가 가능한 사람일 경우
-                            if both_buddy_radio.get_attribute("ng-disabled") == "false":
-                                # 서이추 버튼 클릭
-                                click(both_buddy_radio)
-                                # 서이추 메세지 입력
-                                neighbor_request_message_text_area = self.driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
-                                clear(neighbor_request_message_text_area)
-                                #이부분에 서이추 메세지 추가해야함!!!
-                                neighbor_request_message = "안녕하세요 저희 서이추 해요 ^^"
-                                key_in(neighbor_request_message_text_area, neighbor_request_message)
-                                neighbor_request_button = self.driver.find_element(By.CLASS_NAME, "btn_ok")
-                                click(neighbor_request_button)
-                        except Exception as e:
-                            pass
-        close_current_window(self.driver)
+                    # if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
+                    blog_url = "https://m.blog.naver.com/" + blog['blog_id']
+                    open_new_window(self.driver)
+                    get_page(self.driver, blog_url)
+                    add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                    click(add_neighbor_button)
+                    try:
+                        both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
+                        # 만약 서이추가 가능한 사람일 경우
+                        if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                            # 서이추 버튼 클릭
+                            click(both_buddy_radio)
+                            # 서이추 메세지 입력
+                            neighbor_request_message_text_area = self.driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
+                            clear(neighbor_request_message_text_area)
+                            #이부분에 서이추 메세지 추가해야함!!!
+                            neighbor_request_message = "안녕하세요 저희 서이추 해요 ^^"
+                            key_in(neighbor_request_message_text_area, neighbor_request_message)
+                            neighbor_request_button = self.driver.find_element(By.CLASS_NAME, "btn_ok")
+                            click(neighbor_request_button)
+
+                            blog["neighbor_request_current"] = 1
+                            blog["neighbor_request_date"] = now
+                            db_manager.update_blog(blog)
+                            request_count += 1
+                    except Exception as e:
+                        pass
+        close_all_tabs(self.driver)
         self.finished_signal.emit()
 
 class NeighborPostCollectThread(QThread):
@@ -359,7 +373,7 @@ class NeighborPostCollectThread(QThread):
         blogs = db_manager.get_all_blogs()
         if blogs:
             for blog in blogs:
-                blog_date = datetime.strptime(blog['neighbor_request_date'], "%Y-%m-%d %H:%M:%S").date()
+                blog_date = datetime.strptime(blog['neighbor_request_date'], "%Y-%m-%d %H:%M:%S")
                 if today == blog_date:
                     neighbor_request_count += 1
 

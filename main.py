@@ -35,6 +35,7 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
         self.pause_button: QPushButton
         self.test_button: QPushButton
         self.post_save_button: QPushButton
+        self.neighbor_request_button: QPushButton
         self.neighbor_request_progress_bar: QProgressBar
         self.neighbor_request_percent: QLabel
         self.neighbor_request_today_current_listView: QListView
@@ -84,11 +85,11 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             self.username_text: QLineEdit
             self.password_text: QLineEdit
 
-            # username = DEV_ID
-            # password = DEV_PW
-
             username = self.username_text.text()
             password = self.password_text.text()
+
+            username = DEV_ID
+            password = DEV_PW
             self.username = username
 
             login_thread = LoginThread(self.driver, username, password, self.username)
@@ -152,11 +153,12 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
         try:
             neighbor_request_thread = NeighborRequestThread(self.driver, self.username)
             self.thread_dict['neighbor_request_thread'] = neighbor_request_thread
-            neighbor_request_thread.finished_signal.connect(self.after_neighbor_request)
+            # neighbor_request_thread.finished_signal.connect(lambda: self.after_neighbor_request())
             neighbor_request_thread.start()
             time.sleep(1)
         except Exception as e:
             logging.getLogger("main").error(e)
+
     def after_neighbor_request(self):
         self.neighbor_post_collect()
 
