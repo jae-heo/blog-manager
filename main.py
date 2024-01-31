@@ -150,10 +150,36 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
 
     def neighbor_request(self):
         try:
-            neighbor_request_logic_thread = NeighborRequestLogicThread(self.driver, self.username)
-            self.thread_dict['neighbor_request_logic_thread'] = neighbor_request_logic_thread
-            # neighbor_request_logic_thread.finished_signal.connect(alarm("끝났습니다"))
-            neighbor_request_logic_thread.start()
+            neighbor_request_thread = NeighborRequestThread(self.driver, self.username)
+            self.thread_dict['neighbor_request_thread'] = neighbor_request_thread
+            neighbor_request_thread.finished_signal.connect(self.after_neighbor_request)
+            neighbor_request_thread.start()
+            time.sleep(1)
+        except Exception as e:
+            logging.getLogger("main").error(e)
+    def after_neighbor_request(self):
+        self.neighbor_post_collect()
+
+    def neighbor_post_collect(self):
+        try:
+            neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
+            self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+            neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
+            neighbor_post_collect_thread.start()
+            time.sleep(1)
+        except Exception as e:
+            logging.getLogger("main").error(e)
+
+    def after_neighbor_post_collect(self):
+        self.neighbor_post_comment_like()
+
+    def neighbor_post_comment_like(self):
+        try:
+            neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, '저희 이웃 해요 ^^', self.username)
+            self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
+            neighbor_post_comment_thread.finished_signal.connect()
+            neighbor_post_comment_thread.start()
+            time.sleep(1)
         except Exception as e:
             logging.getLogger("main").error(e)
 
