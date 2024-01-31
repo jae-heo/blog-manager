@@ -82,7 +82,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>170</y>
+      <y>130</y>
       <width>71</width>
       <height>20</height>
      </rect>
@@ -95,13 +95,13 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>110</y>
+      <y>90</y>
       <width>81</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>검색 키워드</string>
+     <string>카테고리</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="username_text">
@@ -128,7 +128,7 @@
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>170</y>
+      <y>130</y>
       <width>131</width>
       <height>21</height>
      </rect>
@@ -138,7 +138,7 @@
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>110</y>
+      <y>90</y>
       <width>131</width>
       <height>22</height>
      </rect>
@@ -148,7 +148,7 @@
     <property name="geometry">
      <rect>
       <x>270</x>
-      <y>110</y>
+      <y>90</y>
       <width>131</width>
       <height>22</height>
      </rect>
@@ -157,8 +157,8 @@
    <widget class="QProgressBar" name="neighbor_request_progress_bar">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>230</y>
+      <x>30</x>
+      <y>250</y>
       <width>381</width>
       <height>23</height>
      </rect>
@@ -171,7 +171,7 @@
     <property name="geometry">
      <rect>
       <x>330</x>
-      <y>260</y>
+      <y>270</y>
       <width>101</width>
       <height>20</height>
      </rect>
@@ -205,8 +205,8 @@
    <widget class="QLabel" name="neighbor_request_message_labe_5">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>210</y>
+      <x>30</x>
+      <y>230</y>
       <width>351</width>
       <height>20</height>
      </rect>
@@ -225,7 +225,7 @@
     <property name="geometry">
      <rect>
       <x>410</x>
-      <y>110</y>
+      <y>90</y>
       <width>131</width>
       <height>31</height>
      </rect>
@@ -238,7 +238,7 @@
     <property name="geometry">
      <rect>
       <x>270</x>
-      <y>170</y>
+      <y>120</y>
       <width>131</width>
       <height>31</height>
      </rect>
@@ -334,13 +334,26 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>410</x>
-      <y>170</y>
+      <y>120</y>
       <width>131</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
      <string>게시물 제작</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="neighbor_request_button">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>180</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>블로그 관리 시작</string>
     </property>
    </widget>
   </widget>

@@ -49,6 +49,7 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
         self.stop_button.clicked.connect(self.stop)
         self.pause_button.clicked.connect(self.pause)
         self.test_button.clicked.connect(self.today_neighbor_request_current)
+        self.neighbor_request_button.clicked.connect(self.neighbor_request)
         # self.post_save_button.clicked.connect(self.post_save)
         self.post_save_button.setVisible(False)
         self.textBrowser.setVisible(False)
@@ -114,7 +115,6 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             self.reload_data()
             pass
             
-
     def after_initialize(self):
         self.today_neighbor_request_current()
         self.reload_data()
