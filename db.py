@@ -15,7 +15,7 @@ from datetime import datetime
 
 # BlogPostTable
 # id (user key)
-# blog_post_id (str)
+# blog_id (str)
 # post_id (str)
 # post_name (str)
 # post_body (str)
@@ -50,7 +50,7 @@ class DbManager:
         sql_blog_post_table = """
                     CREATE TABLE IF NOT EXISTS BlogPostTable (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        blog_post_id TEXT NOT NULL,
+                        blog_id TEXT NOT NULL,
                         post_id TEXT NOT NULL,
                         post_name TEXT NOT NULL,
                         post_body TEXT NOT NULL,
@@ -71,7 +71,7 @@ class DbManager:
         sql_delete_blog = "DELETE FROM BlogTable WHERE blog_id = ?"
         self.c.execute(sql_delete_blog, (blog_id,))
         # Delete the record from BlogPostTable
-        sql_delete_blog_posts = "DELETE FROM BlogPostTable WHERE blog_post_id = ?"
+        sql_delete_blog_posts = "DELETE FROM BlogPostTable WHERE blog_id = ?"
         self.c.execute(sql_delete_blog_posts, (blog_id,))
         self.con.commit()
 
@@ -291,7 +291,7 @@ class DbManager:
         sql_get_post_details = """
                     SELECT post_id
                     FROM BlogPostTable
-                    WHERE blog_post_id = ?
+                    WHERE blog_id = ?
                 """
 
         self.c.execute(sql_get_post_details, (blog_id,))
@@ -303,7 +303,7 @@ class DbManager:
             SELECT post_id, post_name, post_body, written_comment,
                    is_liked, created_date, updated_date
             FROM BlogPostTable
-            WHERE blog_post_id = ?
+            WHERE blog_id = ?
         """
 
         self.c.execute(sql_get_post_details, (blog_id,))
@@ -319,6 +319,26 @@ class DbManager:
                 print(f"Written Comment: {written_comment}, is_liked: {is_liked}")
                 print(f"Created Date: {created_date}, Updated Date: {updated_date}")
                 print("\n")
+
+
+    def insert_blog_post(self, blog_id, post_id, post_name, post_body):
+        sql_check_duplicate = """
+            SELECT * FROM BlogPostTable WHERE blog_id = ? AND post_id = ?;
+        """
+        self.c.execute(sql_check_duplicate, (blog_id, post_id))
+
+        if self.c.fetchone():
+            return False
+
+        sql_insert_blog_post = """
+            INSERT INTO BlogPostTable (blog_id, post_id, post_name, post_body)
+            VALUES (?, ?, ?, ?);
+        """
+        self.c.execute(sql_insert_blog_post, (blog_id, post_id, post_name, post_body))
+        self.con.commit()
+        print(f"BlogPost with ID {blog_id} inserted successfully.")
+        return True
+
 
 
     ############################################################################################
@@ -406,7 +426,7 @@ class DbManager:
         sql_query = """
             UPDATE BlogPostTable
             SET
-                blog_post_id = ?,
+                blog_id = ?,
                 post_id = ?,
                 post_name = ?,
                 post_body = ?,
@@ -419,7 +439,7 @@ class DbManager:
         """
 
         self.c.execute(sql_query, (
-            post['blog_post_id'],
+            post['blog_id'],
             post['post_id'],
             post['post_name'],
             post['post_body'],
