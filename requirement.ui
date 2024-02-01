@@ -346,14 +346,37 @@ p, li { white-space: pre-wrap; }
    <widget class="QPushButton" name="neighbor_request_button">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>180</y>
+      <x>410</x>
+      <y>170</y>
       <width>131</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>블로그 관리 시작</string>
+     <string>이웃신청</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="search_keyword_label_2">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>180</y>
+      <width>91</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>이웃신청 메세지</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="neighbor_request_message">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>180</y>
+      <width>271</width>
+      <height>21</height>
+     </rect>
     </property>
    </widget>
   </widget>
