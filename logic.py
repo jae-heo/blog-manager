@@ -296,9 +296,10 @@ class NeighborRequestThread(QThread):
     finished_signal = pyqtSignal()
     interrupt_signal = False
 
-    def __init__(self, driver, db_name, parent=None):
+    def __init__(self, driver, neighbor_request_message, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
+        self.neighbor_request_message = neighbor_request_message
         self.db_name = db_name
         self.blog_exist = False
 
@@ -320,7 +321,7 @@ class NeighborRequestThread(QThread):
                         close_all_tabs(self.driver)
                         return 
                 # 현재 이웃신청이 되지 않은 블로그 중
-                if blog["neighbor_request_current"] == 0:
+                if blog["neighbor_request_current"] == 0 and blog["neighbor_request_rmv"] != 1:
                     # 이웃신청 조건이 완료된 경우
                     # if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
                     blog_url = "https://m.blog.naver.com/" + blog['blog_id']
@@ -337,9 +338,7 @@ class NeighborRequestThread(QThread):
                             # 서이추 메세지 입력
                             neighbor_request_message_text_area = self.driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
                             clear(neighbor_request_message_text_area)
-                            #이부분에 서이추 메세지 추가해야함!!!
-                            neighbor_request_message = "안녕하세요 저희 서이추 해요 ^^"
-                            key_in(neighbor_request_message_text_area, neighbor_request_message)
+                            key_in(neighbor_request_message_text_area, self.neighbor_request_message)
                             neighbor_request_button = self.driver.find_element(By.CLASS_NAME, "btn_ok")
                             click(neighbor_request_button)
 

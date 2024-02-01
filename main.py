@@ -151,7 +151,9 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
 
     def neighbor_request(self):
         try:
-            neighbor_request_thread = NeighborRequestThread(self.driver, self.username)
+            self.neighbor_request_message: QLineEdit
+            neighbor_request_message = self.neighbor_request_message.text()          
+            neighbor_request_thread = NeighborRequestThread(self.driver, neighbor_request_message, self.username)
             self.thread_dict['neighbor_request_thread'] = neighbor_request_thread
             # neighbor_request_thread.finished_signal.connect(lambda: self.after_neighbor_request())
             neighbor_request_thread.start()
