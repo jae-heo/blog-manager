@@ -54,7 +54,7 @@ class DbManager:
                         post_id TEXT NOT NULL,
                         post_name TEXT NOT NULL,
                         post_body TEXT NOT NULL,
-                        written_comment TEXT NOT NULL,
+                        written_comment TEXT,
                         is_liked BOOLEAN INTEGER DEFAULT 0 NOT NULL,
                         created_date DATE DEFAULT CURRENT_DATE NOT NULL,
                         updated_date DATE DEFAULT CURRENT_DATE NOT NULL
@@ -454,9 +454,8 @@ class DbManager:
 
 if __name__ == "__main__":
     db_manager = DbManager("fuhafuha9")
-    for blog in db_manager.get_all_blogs():
-        if blog['neighbor_request_current'] == 1:
-            print(blog)
+    db_manager.insert_blog_post("pgw031203", "test1", "test_name", "test_body")
+
 
 # if __name__ == "__main__":
 #     db_manager = DbManager()
