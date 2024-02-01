@@ -88,8 +88,8 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             username = self.username_text.text()
             password = self.password_text.text()
 
-            username = DEV_ID
-            password = DEV_PW
+            #username = DEV_ID
+            #password = DEV_PW
             self.username = username
 
             login_thread = LoginThread(self.driver, username, password, self.username)
@@ -175,7 +175,7 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             logging.getLogger("main").error(e)
 
     def after_neighbor_post_collect(self):
-        #self.neighbor_post_comment_like()
+        self.neighbor_post_comment_like()
         pass
 
     def neighbor_post_comment_like(self):
