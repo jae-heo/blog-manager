@@ -328,6 +328,7 @@ class DbManager:
         self.c.execute(sql_check_duplicate, (blog_id, post_id))
 
         if self.c.fetchone():
+            print(f"BlogPost with ID {blog_id} and Post ID {post_id} already exists.")
             return False
 
         sql_insert_blog_post = """
