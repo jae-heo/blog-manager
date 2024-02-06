@@ -1,7 +1,7 @@
 import random
 import time
 import pyperclip
-
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtTest import *
 from selenium import webdriver
@@ -19,7 +19,7 @@ def empty(s: str):
 
 def get_chrome_driver():
     options = Options()
-    options.add_experimental_option("detach", True)
+    # options.add_experimental_option("detach", True)
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 def open_new_window(driver):
@@ -61,3 +61,6 @@ def close_all_tabs(driver):
             driver.switch_to.window(handle)
             driver.close()
             driver.switch_to.window(tabs[-1])
+
+def show_message(program, message):
+    QMessageBox.information(program, "Alert", message)

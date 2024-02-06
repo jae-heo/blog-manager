@@ -88,8 +88,8 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             username = self.username_text.text()
             password = self.password_text.text()
 
-            username = DEV_ID
-            password = DEV_PW
+            # username = DEV_ID
+            # password = DEV_PW
             self.username = username
 
             login_thread = LoginThread(self.driver, username, password, self.username)
@@ -126,7 +126,7 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             self.search_keyword_text: QLineEdit
             search_keyword = self.search_keyword_text.text()
 
-            collect_blogs_by_search_thread = CollectBlogBySearchThread(self.driver, search_keyword, self.username)
+            collect_blogs_by_search_thread = CollectBlogByKeywordThread(self.driver, search_keyword, self.username)
             self.thread_dict['collect_blogs_by_search_thread'] = collect_blogs_by_search_thread
             collect_blogs_by_search_thread.finished_signal.connect(lambda: self.today_neighbor_request_current())
             collect_blogs_by_search_thread.start()

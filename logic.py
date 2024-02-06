@@ -1,18 +1,12 @@
 import logging
 from urllib.parse import urlparse, parse_qs
 
-from selenium.webdriver.common.alert import Alert
-#gh
 from const import *
 from custom_func import *
-
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common import NoSuchElementException
-from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
-
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from db import DbManager
@@ -20,7 +14,7 @@ from datetime import datetime, timedelta
 
 
 class LoginThread(QThread):
-    finished_signal = pyqtSignal()
+    finished_signal = pyqtSignal(bool)
     interrupt_signal = False
 
     def __init__(self, driver, username, password, db_name, parent=None):
@@ -32,28 +26,25 @@ class LoginThread(QThread):
         self.blog_exist = False
 
     def run(self):
-        db_manager = DbManager(self.db_name)
         open_new_window(self.driver)
         get_page(self.driver, NAVER_LOGIN_URL)  
-
         id_text_field = self.driver.find_element(By.CSS_SELECTOR, '#id')
         key_in(id_text_field, self.username)
-
         pw_text_field = self.driver.find_element(By.CSS_SELECTOR, '#pw')
         key_in(pw_text_field, self.password)
-
         login_button = self.driver.find_element(By.XPATH, '//*[@id="log.login"]')
         click(login_button)
-
-        close_current_window(self.driver)
-
-        if db_manager.get_all_blogs():
-            self.blog_exist = True
-
-        self.finished_signal.emit()
+        get_page(self.driver, NAVER_URL)
+        try:
+            self.driver.find_element(By.CSS_SELECTOR, '.MyView-module__desc_email___JwAKa')
+            self.finished_signal.emit(True)
+        except Exception as e:
+            self.finished_signal.emit(False)
+        close_all_tabs(self.driver)
 
 class InitializeThread(QThread):
     finished_signal = pyqtSignal()
+    log_signal = pyqtSignal()
     interrupt_signal = False
 
     def __init__(self, driver, username, db_name, parent=None):
@@ -104,10 +95,10 @@ class InitializeThread(QThread):
         close_current_window(self.driver)
         self.finished_signal.emit()
 
-
-class CollectBlogBySearchThread(QThread):
+class CollectBlogByKeywordThread(QThread):
     finished_signal = pyqtSignal()
-
+    log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(float)
     interrupt_signal = False
 
     def __init__(self, driver, search_keyword, db_name, parent=None):
@@ -130,10 +121,14 @@ class CollectBlogBySearchThread(QThread):
                     count += 1
         if count >= daily_limit:
             # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
-            print('오늘 수집한 블로그가 100개를 넘었습니다.')
+            self.log_signal.emit('오늘 수집한 블로그가 100개를 넘었습니다.')
             close_all_tabs(self.driver)
             return
         
+        self.log_signal.emit(f'오늘 수집한 블로그는 {count}개 입니다.')
+        self.progress_signal.emit(count/daily_limit)
+        self.log_signal.emit(f'블로그 수집을 시작합니다.')
+
         open_new_window(self.driver)
         get_page(self.driver, BLOG_MAIN_URL)
 
@@ -164,10 +159,14 @@ class CollectBlogBySearchThread(QThread):
                         if both_buddy_radio.get_attribute("ng-disabled") == "false":
                             if db_manager.insert_blog_record_with_id(blog_id):
                                 count += 1
+                                self.log_signal.emit(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
+                                self.progress_signal.emit(count/daily_limit)
+
 
                             if count >= daily_limit:
                                 close_all_tabs(self.driver)
-                                print("오늘 100명을 모두 수집했습니다.")
+                                self.log_signal.emit("오늘 100명을 모두 수집했습니다.")
+                                self.progress_signal.emit(count/daily_limit)
                                 return
                     except Exception as e:
                         pass
@@ -180,13 +179,14 @@ class CollectBlogBySearchThread(QThread):
                 page_next_button = self.driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
                 click(page_next_button)
             except NoSuchElementException as e:
-                logging.getLogger("main").info("블로그의 모든 글을 탐색했습니다.")
+                self.log_signal.emit(f"키워드에 속한 블로그를 모두 수집했습니다.")
                 break
         close_current_window(self.driver)
 
 
 class CollectBlogByCategoryThread(QThread):
     finished_signal = pyqtSignal()
+    log_signal = pyqtSignal()
     interrupt_signal = False
 
     def __init__(self, driver, main_category, sub_category, db_name, parent=None):
@@ -294,6 +294,7 @@ class CollectBlogByCategoryThread(QThread):
 
 class NeighborRequestThread(QThread):
     finished_signal = pyqtSignal()
+    log_signal = pyqtSignal()
     interrupt_signal = False
 
     def __init__(self, driver, neighbor_request_message, db_name, parent=None):
@@ -353,6 +354,7 @@ class NeighborRequestThread(QThread):
 
 class NeighborPostCollectThread(QThread):
     finished_signal = pyqtSignal()
+    log_signal = pyqtSignal()
     interrupt_signal = False
 
     def __init__(self, driver, db_name, parent=None):
@@ -493,6 +495,7 @@ class NeighborPostCollectThread(QThread):
 
 class NeighborPostCommentLikeThread(QThread):
     finished_signal = pyqtSignal()
+    log_signal = pyqtSignal()
     interrupt_signal = False
 
     def __init__(self, driver, comment, db_name, parent=None):
