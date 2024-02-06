@@ -155,7 +155,7 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
             neighbor_request_message = self.neighbor_request_message.text()          
             neighbor_request_thread = NeighborRequestThread(self.driver, neighbor_request_message, self.username)
             self.thread_dict['neighbor_request_thread'] = neighbor_request_thread
-            # neighbor_request_thread.finished_signal.connect(lambda: self.after_neighbor_request())
+            neighbor_request_thread.finished_signal.connect(lambda: self.after_neighbor_request())
             neighbor_request_thread.start()
             time.sleep(1)
         except Exception as e:
@@ -176,6 +176,7 @@ class Program(QMainWindow, uic.loadUiType("requirement.ui")[0]):
 
     def after_neighbor_post_collect(self):
         self.neighbor_post_comment_like()
+        pass
 
     def neighbor_post_comment_like(self):
         try:

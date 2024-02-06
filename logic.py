@@ -324,31 +324,31 @@ class NeighborRequestThread(QThread):
                 # 현재 이웃신청이 되지 않은 블로그 중
                 if blog["neighbor_request_current"] == 0 and blog["neighbor_request_rmv"] != 1:
                     # 이웃신청 조건이 완료된 경우
-                    # if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
-                    blog_url = "https://m.blog.naver.com/" + blog['blog_id']
-                    open_new_window(self.driver)
-                    get_page(self.driver, blog_url)
-                    add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
-                    click(add_neighbor_button)
-                    try:
-                        both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
-                        # 만약 서이추가 가능한 사람일 경우
-                        if both_buddy_radio.get_attribute("ng-disabled") == "false":
-                            # 서이추 버튼 클릭
-                            click(both_buddy_radio)
-                            # 서이추 메세지 입력
-                            neighbor_request_message_text_area = self.driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
-                            clear(neighbor_request_message_text_area)
-                            key_in(neighbor_request_message_text_area, self.neighbor_request_message)
-                            neighbor_request_button = self.driver.find_element(By.CLASS_NAME, "btn_ok")
-                            click(neighbor_request_button)
+                    if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
+                        blog_url = "https://m.blog.naver.com/" + blog['blog_id']
+                        open_new_window(self.driver)
+                        get_page(self.driver, blog_url)
+                        add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                        click(add_neighbor_button)
+                        try:
+                            both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
+                            # 만약 서이추가 가능한 사람일 경우
+                            if both_buddy_radio.get_attribute("ng-disabled") == "false":
+                                # 서이추 버튼 클릭
+                                click(both_buddy_radio)
+                                # 서이추 메세지 입력
+                                neighbor_request_message_text_area = self.driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
+                                clear(neighbor_request_message_text_area)
+                                key_in(neighbor_request_message_text_area, self.neighbor_request_message)
+                                neighbor_request_button = self.driver.find_element(By.CLASS_NAME, "btn_ok")
+                                click(neighbor_request_button)
 
-                            blog["neighbor_request_current"] = 1
-                            blog["neighbor_request_date"] = now
-                            db_manager.update_blog(blog)
-                            request_count += 1
-                    except Exception as e:
-                        pass
+                                blog["neighbor_request_current"] = 1
+                                blog["neighbor_request_date"] = now
+                                db_manager.update_blog(blog)
+                                request_count += 1
+                        except Exception as e:
+                            pass
         close_all_tabs(self.driver)
         self.finished_signal.emit()
 
@@ -361,136 +361,78 @@ class NeighborPostCollectThread(QThread):
         super().__init__(parent)
         self.driver = driver
         self.db_name = db_name
-
     def run(self):
         db_manager = DbManager(self.db_name)
         all_blogs = db_manager.get_all_blogs()
+        db_manager.insert_blog_post("pgw031203", "test1", "test_name", "test_body")
+        time.sleep(1)
         all_posts = db_manager.get_all_blog_posts()
 
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        neighbor_request_count = 0
-        today = datetime.now().date()
-        blogs = db_manager.get_all_blogs()
-        if blogs:
-            for blog in blogs:
-                blog_date = datetime.strptime(blog['neighbor_request_date'], "%Y-%m-%d %H:%M:%S")
-                if today == blog_date:
-                    neighbor_request_count += 1
-
         for blog in all_blogs:
-            if self.interrupt_signal:
-                close_all_tabs(self.driver)
-                return
-            # 현재 이웃신청이 되지 않은 블로그 중
-            if not blog["neighbor_request_current"]:
-                # 블로그를 수집해야 하는 경우
-                if self.interrupt_signal:
-                    close_all_tabs(self.driver)
-                    return
-                filtered_posts = [
-                    post for post in all_posts
-                    if post.get("blog_post_id") == blog
-                ]
+            filtered_posts = [
+                post for post in all_posts
+                if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id")
+            ]
 
-                current_xpath = '//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[1]'
-                blog_url = f"https://m.blog.naver.com/{blog['blog_id']}"
+            time.sleep(1)
+            url = f"https://m.blog.naver.com/{blog['blog_id']}"
+            get_page(self.driver, url)
+            time.sleep(2)
 
-                if filtered_posts:
-                    while True:
-                        if self.interrupt_signal:
-                            close_all_tabs(self.driver)
-                            return
-                        recent_post_id = get_post_id(self.driver, blog_url, current_xpath)
+            current_number = 1
+
+            try:
+                button = self.driver.find_element(By.CSS_SELECTOR,
+                                             '#contentslist_block > div > div > div > button:nth-child(2)')
+                click(button)
+                time.sleep(1)
+                while True:
+                    selector = f'#contentslist_block > div > div > div:nth-child(2) > ul > li:nth-child({current_number})'
+                    selector_title = f'{selector} > div > a > div > strong > span > span'
+                    time.sleep(1)
+                    selector_content = f'{selector} > div > a > div > p > span > span'
+                    time.sleep(1)
+
+                    post_title = self.driver.find_element(By.CSS_SELECTOR, selector_title).text
+                    post_content = self.driver.find_element(By.CSS_SELECTOR, selector_content).text
+                    if post_content == "":
+                        post_content = "Post Content is None"
+                    time.sleep(1)
+
+                    latest_post = self.driver.find_element(By.CSS_SELECTOR, selector)
+                    # Extract the URL of the latest post
+                    latest_post_url = latest_post.find_element(By.TAG_NAME, "a").get_attribute("href")
+
+                    # Find the last occurrence of '/'
+                    last_slash_index = latest_post_url.rfind('/')
+
+                    # Find the index of '?' after the last '/'
+                    question_mark_index = latest_post_url.find('?', last_slash_index)
+                    time.sleep(1)
+                    if last_slash_index != -1 and question_mark_index != -1:
+                        extracted_part = latest_post_url[last_slash_index + 1:question_mark_index]
+                        time.sleep(1)
+                        continue_flag = False
                         for post in filtered_posts:
-                            if recent_post_id == post.get("post_id"):
-                                current_index = int(current_xpath.split('/')[-1][:-1])
-                                new_xpath = f'//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[{current_index}]'
-                                # 다음 검사를 위해 current_xpath 갱신
-                                current_xpath = new_xpath
+                            if post["post_id"] == extracted_part:
+                                current_number += 1
+                                continue_flag = True
                                 break
-                        else:
-                            if not filtered_posts:  # 만약 필터링된 포스터 테이블이 비어 있다면 새로운 post_id를 추가
-                                new_post = {'blog_post_id': blog['blog_id'], 'post_id': recent_post_id, 'is_liked': 0, 'written_comment': ''}
-                                db_manager.update_blog(new_post)
+                        if continue_flag:
+                            continue
+                        print(extracted_part)
+                        print(post_title)
+                        print(post_content)
+                        db_manager.insert_blog_post(blog["blog_id"], extracted_part, post_title, post_content)
+                        print("db 넣기 완료")
+                        break
 
-                            self.driver.get(blog_url + '/' + recent_post_id)
-                            self.driver.find_element(By.XPATH,
-                                                '//*[@id="contentslist_block"]/div[2]/div/div[2]/ul/li[1]').click()
-
-                            # 좋아요 버튼 확인
-                            rand_sleep(450, 550)
-                            try:
-                                if self.interrupt_signal:
-                                    close_all_tabs(self.driver)
-                                    return
-                                is_like = self.driver.find_element(by='xpath',
-                                                            value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
-                                    'aria-pressed')  # 좋아요 버튼 상태 확인
-                                # print(is_like)
-                            except Exception:  # 간혹 공감 버튼 자체가 없는 게시글이 존재함
-                                print('공감 버튼 없음')
-                                continue
-                            if is_like == 0:  # 좋아요 버튼 상태가 안눌러져있는 상태일 경우에만 좋아요 버튼 클릭
-                                self.driver.find_element(by='xpath',
-                                                    value='//*[@id="body"]/div[10]/div/div[1]/div/div/a/span').click()  # 하트 클릭
-                                rand_sleep(450, 550)
-                                blog['like_count'] += 1
-                                post['is_liked'] = 1
-
-                            if self.interrupt_signal:
-                                close_all_tabs(self.driver)
-                                return
-
-                            # 댓글 확인
-                            # 클릭할 부분을 xpath로 찾아서 클릭
-                            try:
-                                click_button = self.driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
-                                click_button.click()
-
-                                # 댓글 입력란을 찾아서 내용 입력
-                                comment_input_1 = self.driver.find_element(By.XPATH,
-                                                                    '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
-                                click(comment_input_1)
-
-                                rand_sleep(450, 550)
-                                comment_input = self.driver.find_element(By.XPATH, '//*[@id="naverComment__write_textarea"]')
-                                click(comment_input)
-                                rand_sleep(450, 550)
-                                comment_input.send_keys("좋은 글 감사합니다!")  # 원하는 댓글 내용으로 수정
-                                blog['comment_count'] += 1
-                                post['written_comment'] = comment_input.get_attribute('좋은 글 감사합니다!')
-
-                                # 댓글 작성 버튼을 찾아서 클릭
-                                rand_sleep(450, 550)
-                                comment_button = self.driver.find_element(By.XPATH,
-                                                                    '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
-                                comment_button.click()
-
-                                # 댓글 작성 완료 메시지 출력
-                                print("댓글을 작성했습니다.")
-
-                                db_manager.update_blog(blog)
-                                db_manager.update_post(post)
-                                if self.interrupt_signal:
-                                    close_all_tabs(self.driver)
-                                    return
-
-                                close_current_window(self.driver)
-                            except Exception as e:
-                                print(f"An error occurred: {str(e)}")
-                                # Handle the error as needed, e.g., logging or additional actions.
-            else:
-                if (now - blog["neighbor_request_date"]).days > 7:
-                    # Update neighbor_request_current to False
-                    blog["neighbor_request_current"] = 0
-                    blog["neighbor_request_rmv"] = 1
-                    db_manager.update_blog(blog)
-                else:
-                    continue
-
-            close_current_window(self.driver)
-
+                    else:
+                        print("Pattern not found.")
+            except:
+                print('글 없음')
+                continue
+        close_all_tabs(self.driver)
         self.finished_signal.emit()
 
 class NeighborPostCommentLikeThread(QThread):
@@ -508,85 +450,96 @@ class NeighborPostCommentLikeThread(QThread):
         db_manager = DbManager(self.db_name)
         all_blogs = db_manager.get_all_blogs()
         all_posts = db_manager.get_all_blog_posts()
-        if not all_posts:
-            close_all_tabs(self.driver)
-            return
+
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         for blog in all_blogs:
-            if self.interrupt_signal:
-                close_all_tabs(self.driver)
-                return
-            
+            if blog["blog_id"] == "pgw031203":
+                continue
+            filtered_posts = [
+                post for post in all_posts
+                if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id") and post.get(
+                    "is_liked") == 0
+            ]
             if blog["neighbor_request_rmv"] == 1:
                 continue
-            # 현재 이웃신청이 되지 않은 블로그 중 조건을 만족하지 못한 블로그들에 대해서 Post에 좋아요와 댓글을 달도록 만듬
-            if not blog["neighbor_request_current"]:
+            blog_url = f"https://m.blog.naver.com/{blog['blog_id']}"
+            if blog["neighbor_request_current"] == 0:
                 if blog["like_count"] < 5 and blog["comment_count"] < 5:
-                    filtered_posts = [
-                        post for post in all_posts
-                        if post.get("blog_post_id") == blog
-                    ]
-                    blog_url = f"https://m.blog.naver.com/{blog['blog_id']}"
-                    if filtered_posts:
-                        for post in filtered_posts:
-                            if self.interrupt_signal:
-                                close_all_tabs(self.driver)
-                                return
-                            post_url = blog_url + '/' + post['post_id']
-                            get_page(self.driver, post_url)
-                            # 좋아요 버튼 확인
-                            try:
-                                if self.interrupt_signal:
-                                    close_all_tabs(self.driver)
-                                    return
-                                is_liked = self.driver.find_element(by='xpath',
-                                                            value='//*[@id="body"]/div[10]/div/div[1]/div/div/a').get_attribute(
-                                    'aria-pressed')  # 좋아요 버튼 상태 확인
-                                if is_liked == 0:  
-                                    like_button = self.driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[1]/div/div/a/span')
-                                    click(like_button)
-                                    rand_sleep(450, 550)
-                                    blog['like_count'] += 1
-                                    post['is_liked'] = 1
-                            except Exception:
-                                # print('공감 버튼 없음')
-                                pass
-                            
-                            # 댓글 확인
-                            try:
-                                comment_button = self.driver.find_element(By.XPATH, '//*[@id="body"]/div[10]/div/div[2]/a[1]')
-                                click(comment_button)
-                                # 댓글 입력란을 찾아서 내용 입력
-                                comment_input_1 = self.driver.find_element(By.XPATH,
-                                                                    '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[2]/div/label')
-                                click(comment_input_1)
-                                comment_input = self.driver.find_element(By.XPATH, '//*[@id="naverComment__write_textarea"]')
-                                click(comment_input)
-
-                                comment_input.send_keys(self.comment)  # 원하는 댓글 내용으로 수정
-
-                                # 댓글 작성 버튼을 찾아서 클릭
+                    for post in filtered_posts:
+                        post_url = blog_url + '/' + post['post_id']
+                        get_page(self.driver, post_url)
+                        time.sleep(1)
+                        # 좋아요 버튼 확인
+                        try:
+                            time.sleep(1)
+                            is_liked = self.driver.find_element(By.CSS_SELECTOR,
+                                                           "#body > div.floating_menu > div > div.btn_like_w > div > div > a").get_attribute(
+                                'aria-pressed')  # 좋아요 버튼 상태 확인
+                            print(is_liked)
+                            time.sleep(1)
+                            if is_liked == "false":
+                                like_button = self.driver.find_element(By.CSS_SELECTOR,
+                                                                  '#body > div.floating_menu > div > div.btn_like_w > div > div > a')
+                                click(like_button)
+                                time.sleep(1)
                                 rand_sleep(450, 550)
-                                comment_button = self.driver.find_element(By.XPATH,
-                                                                    '//*[@id="naverComment"]/div/div[7]/div[1]/form/fieldset/div/div/div[6]/button')
-                                comment_button.click()
-                                blog['comment_count'] += 1
-                                post['written_comment'] = self.comment
-                                # 댓글 작성 완료 메시지 출력
-                                print("댓글을 작성했습니다.")
-                                db_manager.update_blog(blog)
-                                db_manager.update_post(post)
+                                blog['like_count'] += 1
+                                post['is_liked'] = 1
+                            else:
+                                pass
+                        except Exception:
+                            # print('공감 버튼 없음')
+                            pass
+                        time.sleep(1)
+                        # 댓글 확인
+                        try:
+                            if post['written_comment'] is not None:
+                                continue
+                            time.sleep(1)
+                            comment_button = self.driver.find_element(By.CSS_SELECTOR,
+                                                                 '#body > div.floating_menu > div > div.btn_r > a.btn_reply')
+                            click(comment_button)
+                            time.sleep(4)
+                            # 댓글 입력란을 찾아서 내용 입력
+                            comment_input_1 = self.driver.find_element(By.CSS_SELECTOR,
+                                                                  '#naverComment > div > div.u_cbox_write_wrap > div.u_cbox_write_box.u_cbox_type_logged_in > form > fieldset > div > div > div.u_cbox_write_area > div > label')
+                            click(comment_input_1)
+                            time.sleep(1)
+                            comment_input = self.driver.find_element(By.CSS_SELECTOR, '#naverComment__write_textarea')
+                            click(comment_input)
+                            time.sleep(1)
+                            comment = "안녕하세요~ 좋은 글 잘 읽었습니다!!"
 
-                                close_current_window(self.driver)
-                            except Exception as e:
-                                print(f"An error occurred: {str(e)}")
+                            comment_input.send_keys(comment)  # 원하는 댓글 내용으로 수정
+
+                            # 댓글 작성 버튼을 찾아서 클릭
+                            rand_sleep(450, 550)
+                            time.sleep(1)
+                            comment_button = self.driver.find_element(By.CSS_SELECTOR,
+                                                                 '#naverComment > div > div.u_cbox_write_wrap > div.u_cbox_write_box.u_cbox_type_logged_in > form > fieldset > div > div > div.u_cbox_upload > button')
+                            time.sleep(1)
+                            comment_button.click()
+                            blog['comment_count'] += 1
+                            post['written_comment'] = comment
+                            # 댓글 작성 완료 메시지 출력
+                            print("댓글을 작성했습니다.")
+                            time.sleep(1)
+                            db_manager.update_blog(blog)
+                            db_manager.update_post(post)
+
+                        except Exception as e:
+                            print(f"An error occurred: {str(e)}")
+                            continue
                                 # Handle the error as needed, e.g., logging or additional actions.
+                else:
+                    continue
             else:
                 if (now - blog["neighbor_request_date"]).days > 7:
                     # Update neighbor_request_current to False
                     blog["neighbor_request_current"] = 0
                     blog["neighbor_request_rmv"] = 1
                     db_manager.update_blog(blog)
+                    continue
                 else:
                     continue
         close_all_tabs(self.driver)
