@@ -130,7 +130,6 @@ class BlogManagerApp(QMainWindow):
         self.plainTextEdit_run: QPlainTextEdit
         self.plainTextEdit_postComment: QPlainTextEdit
 
-
         if self.radioButton_keyword.isChecked():
             keyword = self.lineEdit_keyword.text()
             self.build_thread(

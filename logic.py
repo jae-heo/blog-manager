@@ -12,7 +12,6 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from db import DbManager
 from datetime import datetime, timedelta
 
-
 class NThread(QThread):
     finished_signal = pyqtSignal()
     log_signal = pyqtSignal(str)
@@ -25,7 +24,12 @@ class NThread(QThread):
     def finish(self):
         self.finished_signal.emit()
         close_all_tabs(self.driver)
-        return
+    
+    def log_ui(self, s):
+        self.log_signal.emit(s)
+
+    def set_progress(self, value):
+        self.progress_signal.emit(value)
 
 class LoginThread(NThread):
     finished_signal = pyqtSignal(bool)
@@ -56,10 +60,6 @@ class LoginThread(NThread):
         close_all_tabs(self.driver)
     
 class InitializeThread(NThread):
-    finished_signal = pyqtSignal()
-    log_signal = pyqtSignal()
-    interrupt_signal = False
-
     def __init__(self, driver, username, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -128,14 +128,13 @@ class CollectBlogByKeywordThread(NThread):
                 if today == blog_date:
                     count += 1
         if count >= daily_limit:
-            self.log_signal.emit('오늘 수집한 블로그가 100개를 넘었습니다.')
-            self.finished_signal.emit()
-            close_all_tabs(self.driver)
+            self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
+            self.finish()
             return
         
-        self.log_signal.emit(f'오늘 수집한 블로그는 {count}개 입니다.')
-        self.progress_signal.emit(count/daily_limit)
-        self.log_signal.emit(f'블로그 수집을 시작합니다.')
+        self.log_ui(f'오늘 수집한 블로그는 {count}개 입니다.')
+        self.set_progress(count/daily_limit)
+        self.log_ui(f'블로그 수집을 시작합니다.')
 
         open_new_window(self.driver)
         get_page(self.driver, BLOG_MAIN_URL)
@@ -151,7 +150,7 @@ class CollectBlogByKeywordThread(NThread):
                 # 검색결과 내 Blog를 순회
                 for author in self.driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
                     if self.interrupt_signal:
-                        close_all_tabs(self.driver)
+                        self.finish()
                         return
 
                     blog_id = author.get_attribute("href").split("/")[3]
@@ -167,15 +166,12 @@ class CollectBlogByKeywordThread(NThread):
                         if both_buddy_radio.get_attribute("ng-disabled") == "false":
                             if db_manager.insert_blog_record_with_id(blog_id):
                                 count += 1
-                                self.log_signal.emit(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
-                                self.progress_signal.emit(count/daily_limit)
-
+                                self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
+                                self.set_progress(count/daily_limit)
 
                             if count >= daily_limit:
-                                close_all_tabs(self.driver)
-                                self.log_signal.emit("오늘 100명을 모두 수집했습니다.")
-                                self.progress_signal.emit(count/daily_limit)
-                                self.finished_signal.emit()
+                                self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
+                                self.finish()
                                 return
                     except Exception as e:
                         pass
@@ -188,16 +184,11 @@ class CollectBlogByKeywordThread(NThread):
                 page_next_button = self.driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
                 click(page_next_button)
             except NoSuchElementException as e:
-                self.log_signal.emit(f"키워드에 속한 블로그를 모두 수집했습니다.")
+                self.log_ui(f"키워드에 속한 블로그를 모두 수집했습니다.")
                 break
         close_current_window(self.driver)
 
-
-class CollectBlogByCategoryThread(QThread):
-    finished_signal = pyqtSignal()
-    log_signal = pyqtSignal()
-    interrupt_signal = False
-
+class CollectBlogByCategoryThread(NThread):
     def __init__(self, driver, main_category, sub_category, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -207,10 +198,8 @@ class CollectBlogByCategoryThread(QThread):
 
     def run(self):
         db_manager = DbManager(self.db_name)
-
         count = 0
-        daily_limit = 103
-
+        daily_limit = 100
         today = datetime.now().date()
         blogs = db_manager.get_all_blogs()
         if blogs:
@@ -220,17 +209,15 @@ class CollectBlogByCategoryThread(QThread):
                     count += 1
 
         if count >= daily_limit:
-            close_all_tabs(self.driver)
-            print('오늘 수집한 블로그가 100개를 넘었습니다.')
-            # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
+            self.log_ui(f'오늘 수집한 블로그가 {daily_limit}개를 넘었습니다.')
+            self.finish()
             return
 
+        # 블로그창 열고 카테고리 선택하기
         open_new_window(self.driver)
         get_page(self.driver, BLOG_MAIN_URL)
-
         category_discovery_button = self.driver.find_element(By.XPATH, '//*[@id="lnbMenu"]/a[2]')
         click(category_discovery_button)
-
         main_category_xpath = f"//a[contains(@bg-nclick, '{MAIN_CATEGORIES[self.main_category]}')]"
         main_category_element = WebDriverWait(self.driver, 1000).until(
             EC.element_to_be_clickable((By.XPATH, main_category_xpath))
@@ -247,30 +234,26 @@ class CollectBlogByCategoryThread(QThread):
             # 검색결과의 페이지 별 순회
             for i in range(0, len(self.driver.find_elements(By.CSS_SELECTOR, ".pagination span a"))):
                 # 검색결과 내 Blog를 순회
-                for post_index in range(len(self.driver.find_elements(By.CSS_SELECTOR,
-                                                                ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
+                for post_index in range(len(self.driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
                     if self.interrupt_signal:
-                        close_all_tabs(self.driver)
-                        return                     
-                    post = self.driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[
-                        post_index]
+                        self.finish()
+                        return
+
+                    post = self.driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[post_index]
                     post_link_splat = post.get_attribute("href").split("/")
                     blog_id = post_link_splat[3]
                     post_id = post_link_splat[4]
                     liked_link = f'https://m.blog.naver.com/SympathyHistoryList.naver?blogId={blog_id}&logNo={post_id}&categoryId=POST'
                     open_new_window(self.driver)
                     get_page(self.driver, liked_link)
-                    rand_sleep(3000, 5000)
-                    for blog_description in self.driver.find_elements(By.CSS_SELECTOR,
-                                                                ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
+                    for blog_description in self.driver.find_elements(By.CSS_SELECTOR, ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
                         if self.interrupt_signal:
-                            close_all_tabs(self.driver)
-                            return                        
+                            self.finish()
+                            return                    
                         blog_id = blog_description.get_attribute("href").split("/")[3]
                         # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
-                        blog_url = "https://m.blog.naver.com/" + blog_id
                         open_new_window(self.driver)
-                        get_page(self.driver, blog_url)
+                        get_page(self.driver, "https://m.blog.naver.com/" + blog_id)
                         try:
                             add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
                             click(add_neighbor_button)
@@ -279,10 +262,14 @@ class CollectBlogByCategoryThread(QThread):
                             if both_buddy_radio.get_attribute("ng-disabled") == "false":
                                 if db_manager.insert_blog_record_with_id(blog_id):
                                     count += 1
+                                    self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
+                                    self.set_progress(count/daily_limit)
+                                self.log_ui(f"지금 카운트는.. {count}")
+                                self.log_ui(f"지금 리미트는.. {daily_limit}")
                                 
                                 if count >= daily_limit:
-                                    close_all_tabs(self.driver)
-                                    print("오늘 100명을 모두 수집했습니다.")
+                                    self.log_ui("오늘 100명을 모두 수집했습니다.")
+                                    self.finish()
                                     return
                         except Exception as e:
                             # 이 경우는 이미 이웃
@@ -635,7 +622,6 @@ class NeighborPostCommentLikeThread(QThread):
         self.log_signal.emit(f"모든 블로그에 좋아요, 댓글작업을 완료했습니다.")
         close_current_window(self.driver)
         self.finished_signal.emit()
-
 
 def neighbor_request_to_blog(driver, blog_id):
     blog_url = "https://m.blog.naver.com/" + blog_id
