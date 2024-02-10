@@ -36,8 +36,6 @@ class NThread(QThread):
         self.progress_signal.emit(value)
 
 class LoginThread(NThread):
-    finished_signal = pyqtSignal(bool)
-
     def __init__(self, driver, username, password, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -55,12 +53,11 @@ class LoginThread(NThread):
         key_in(pw_text_field, self.password)
         login_button = self.driver.find_element(By.XPATH, '//*[@id="log.login"]')
         click(login_button)
-        get_page(self.driver, NAVER_URL)
         try:
             self.driver.find_element(By.CSS_SELECTOR, '.MyView-module__desc_email___JwAKa')
-            self.finished_signal.emit(True)
+            self.finished_signal.emit(0)
         except Exception as e:
-            self.finished_signal.emit(False)
+            self.finished_signal.emit(1)
         close_all_tabs(self.driver)
     
 class CollectBlogByKeywordThread(NThread):

@@ -87,8 +87,8 @@ class BlogManagerApp(QMainWindow):
         login_thread.start()
         time.sleep(1)
 
-    def after_login(self, is_success):
-        if is_success:
+    def after_login(self, status):
+        if status == 0:
             self.tab_main.setTabEnabled(1, True)
             self.tab_main.setCurrentIndex(1)
             show_message(self, "로그인 성공.")
