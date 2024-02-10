@@ -147,6 +147,7 @@ class BlogManagerApp(QMainWindow):
                 'collect_blogs_by_category_thread',
                 self.after_collect_by_category,
                 True)
+            self.set_current_task_text("블로그 수집중...")
 
     def build_thread(self, thread, name, finished_function, start = False):
         self.thread_dict[name] = thread

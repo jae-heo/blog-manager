@@ -63,55 +63,6 @@ class LoginThread(NThread):
             self.finished_signal.emit(False)
         close_all_tabs(self.driver)
     
-class InitializeThread(NThread):
-    def __init__(self, driver, username, db_name, parent=None):
-        super().__init__(parent)
-        self.driver = driver
-        self.username = username
-        self.db_name = db_name
-
-    def run(self):
-        db_manager = DbManager(self.db_name)
-        open_new_window(self.driver)
-        url = f"https://admin.blog.naver.com/BuddyListManage.naver?blogId={self.username}"
-        get_page(self.driver, url)
-        buddy_ids = []
-        while True:
-            if self.interrupt_signal:
-                print("InitializeThread interrupted.")
-                break
-
-            # 검색결과의 페이지 별 순회
-            current_page_element = self.driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong')
-            current_page_text = current_page_element.text
-            current_page_text_copy = current_page_text
-            active_page_buttons = self.driver.find_elements(By.CSS_SELECTOR, '.paginate .paginate_re a')
-
-            # 로직
-            buddies = self.driver.find_elements(By.CSS_SELECTOR, ".buddy .ellipsis2 a")
-            for buddy in buddies:
-                blog_id = buddy.get_attribute("href").split("/")[3]
-                buddy_ids.append(blog_id)
-
-            for page_button in active_page_buttons:
-                if int(page_button.text) == int(current_page_text) + 1:
-                    click(page_button)
-                    current_page_text = self.driver.find_element(By.CSS_SELECTOR, '.paginate .paginate_re strong').text
-            
-            # 만약 다음 페이지가 없다면
-            if current_page_text == current_page_text_copy:
-                break
-
-        db_manager.insert_blogs_record_with_ids(buddy_ids)
-        blogs = db_manager.get_all_blogs()
-        for blog in blogs:
-            created_date = blog['created_date']
-            created_date = datetime.strptime(created_date, '%Y-%m-%d %H:%M:%S')
-            blog['created_date'] = created_date - timedelta(days=1)
-            db_manager.update_blog(blog)
-        close_current_window(self.driver)
-        self.finished_signal.emit()
-
 class CollectBlogByKeywordThread(NThread):
     def __init__(self, driver, search_keyword, db_name, parent=None):
         super().__init__(parent)
