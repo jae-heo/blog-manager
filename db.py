@@ -40,8 +40,8 @@ class DbManager:
                         neighbor_request_date DATE,
                         neighbor_request_current INTEGER DEFAULT 0 NOT NULL,
                         neighbor_request_rmv INTEGER DEFAULT 0 NOT NULL,
-                        created_date DATE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                        updated_date DATE DEFAULT CURRENT_TIMESTAMP NOT NULL
+                        created_date DATE NOT NULL,
+                        updated_date DATE NOT NULL
                     );
                 """
         self.c.execute(sql_blog_table)
@@ -90,10 +90,11 @@ class DbManager:
             return False
 
         sql_insert_blog = """
-            INSERT INTO BlogTable (blog_id)
-            VALUES (?);
+            INSERT INTO BlogTable (blog_id, created_date, updated_date)
+            VALUES (?, ?, ?);
         """
-        self.c.execute(sql_insert_blog, (blog_id,))
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.c.execute(sql_insert_blog, (blog_id, current_datetime, current_datetime))
         self.con.commit()
         print(f"Blog with ID {blog_id} inserted successfully.")
         return True
@@ -105,7 +106,7 @@ class DbManager:
             all_ids = [blog["blog_id"] for blog in all_blogs]
         else:
             all_ids = None
-
+            
         for blog_id in blog_ids:
             if all_ids:
                 if blog_id in all_ids:
@@ -113,14 +114,13 @@ class DbManager:
                     continue
             else:
                 sql_insert_blog = """
-                    INSERT INTO BlogTable (blog_id)
-                    VALUES (?);
+                    INSERT INTO BlogTable (blog_id, created_date, updated_date)
+                    VALUES (?, ?, ?);
                 """
-                self.c.execute(sql_insert_blog, (blog_id,))
-                count += 1
+                current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.c.execute(sql_insert_blog, (blog_id, current_datetime, current_datetime))
 
         self.con.commit()
-        print(f"{count} blogs inserted successfully.")
 
     # Blogtable blog_id 전체 출력
     def get_all_blog_ids(self):
@@ -452,23 +452,16 @@ class DbManager:
         ))
         self.con.commit()
 
-if __name__ == "__main__":
-    db_manager = DbManager("fuhafuha9")
-    db_manager.insert_blog_post("pgw031203", "test1", "test_name", "test_body")
-
-
 # if __name__ == "__main__":
-#     db_manager = DbManager()
-#     today = datetime.now().date()
-#     # db_manager.insert_blogs_record_with_ids(['test1', 'test2', 'test3']) 
-#     blogs = db_manager.get_all_blogs()
-#     # for blog in blogs:
-#     #     print(blog)
-#     print(type(blogs[0]['created_date']))
-#     blog_date = datetime.strptime(blogs[0]['created_date'], "%Y-%m-%d %H:%M:%S").date()
-#     # print(type(datetime.strptime(blogs[0]['created_date'], "%Y-%m-%d %H:%M:%S").date()))
-#     print(today == blog_date)
-#     print(len(blogs))
+#     db_manager = DbManager("fuhafuha9")
+#     db_manager.insert_blog_post("pgw031203", "test1", "test_name", "test_body")
+
+
+if __name__ == "__main__":
+    db_manager = DbManager("gjwodud119")
+    blogs = db_manager.get_all_blogs()
+    for blog in blogs:
+        print(blog)
         
         
 # if __name__ == "__main__":
