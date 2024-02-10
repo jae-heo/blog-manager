@@ -647,7 +647,7 @@ def neighbor_request_to_blog(driver, blog_id):
             neighbor_request_message_text_area = driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
             clear(neighbor_request_message_text_area)
             #이부분에 서이추 메세지 추가해야함!!!
-            neighbor_request_message = "안녕하세요 저희 서이추 해요 ^^"
+            neighbor_request_message = "안녕하세요 저희 서이추 해요 ~"
             key_in(neighbor_request_message_text_area, neighbor_request_message)
             neighbor_request_button = driver.find_element(By.CLASS_NAME, "btn_ok")
             click(neighbor_request_button)
