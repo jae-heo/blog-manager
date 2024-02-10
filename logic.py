@@ -11,7 +11,14 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 from db import DbManager
 from datetime import datetime, timedelta
+class NModule(QThread):
+    finished_signal = pyqtSignal()
+    log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(float)
+    interrupt_signal = False
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
 class LoginThread(QThread):
     finished_signal = pyqtSignal(bool)
@@ -41,7 +48,7 @@ class LoginThread(QThread):
         except Exception as e:
             self.finished_signal.emit(False)
         close_all_tabs(self.driver)
-
+    
 class InitializeThread(QThread):
     finished_signal = pyqtSignal()
     log_signal = pyqtSignal()
