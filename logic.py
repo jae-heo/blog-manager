@@ -390,7 +390,7 @@ class NeighborPostCollectThread(QThread):
 
         self.log_signal.emit(f'오늘 수집한 블로그 포스트는 {count}개 입니다.~')
         self.progress_signal.emit(count / daily_limit)
-        self.log_signal.emit(f'블로그 수집을 시작합니다.')
+        self.log_signal.emit(f'블로그 수집을 시작합니다!')
 
         open_new_window(self.driver)
 
