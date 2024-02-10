@@ -134,25 +134,21 @@ class BlogManagerApp(QMainWindow):
 
         if self.radioButton_keyword.isChecked():
             keyword = self.lineEdit_keyword.text()
-            collect_blogs_by_keyword_thread = CollectBlogByKeywordThread(self.driver, keyword, self.username)
-            self.thread_dict['collect_blogs_by_keyword_thread'] = collect_blogs_by_keyword_thread
-            collect_blogs_by_keyword_thread.finished_signal.connect(self.after_collect_by_keyword)
-            collect_blogs_by_keyword_thread.log_signal.connect(self.log_to_ui_logger)
-            collect_blogs_by_keyword_thread.progress_signal.connect(self.progress_bar_update)
-            collect_blogs_by_keyword_thread.start()
+            self.build_thread(
+                CollectBlogByKeywordThread(self.driver, keyword, self.username),
+                'collect_blogs_by_keyword_thread',
+                self.after_collect_by_keyword,
+                True)
             self.set_current_task_text("블로그 수집중...")
-            time.sleep(1)
 
         if self.radioButton_category.isChecked():
             main_category = self.comboBox_mainCategory.currentText()
             sub_category = self.comboBox_subCategory.currentText()
-            collect_blogs_by_category_thread = CollectBlogByCategoryThread(self.driver, main_category, sub_category, self.username)
-            self.thread_dict['collect_blogs_by_category_thread'] = collect_blogs_by_category_thread
-            collect_blogs_by_category_thread.finished_signal.connect(self.after_collect_by_category)
-            collect_blogs_by_category_thread.log_signal.connect(self.log_to_ui_logger)
-            collect_blogs_by_category_thread.start()
-            time.sleep(1)
-
+            self.build_thread(
+                CollectBlogByCategoryThread(self.driver, main_category, sub_category, self.username),
+                'collect_blogs_by_category_thread',
+                self.after_collect_by_category,
+                True)
 
         neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
         self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
@@ -169,6 +165,16 @@ class BlogManagerApp(QMainWindow):
         neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
         neighbor_post_comment_thread.start()
         time.sleep(1)
+
+    def build_thread(self, thread, name, finished_function, start = False):
+        self.thread_dict[name] = thread
+        thread.progress_signal.connect(self.progress_bar_update)
+        thread.log_signal.connect(self.progress_bar_update)
+        thread.finished_signal.connect(finished_function)
+        if start:
+            thread.start()
+            time.sleep(1)
+        return thread
 
     def after_neighbor_post_collect(self):
         self.log_to_ui_logger("블로그의 포스트 수집을 완료했습니다.")
