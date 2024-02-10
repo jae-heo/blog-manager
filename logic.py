@@ -13,7 +13,7 @@ from db import DbManager
 from datetime import datetime, timedelta
 
 class NThread(QThread):
-    finished_signal = pyqtSignal()
+    finished_signal = pyqtSignal(int)
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
     interrupt_signal = False
@@ -22,7 +22,11 @@ class NThread(QThread):
         super().__init__(parent)
 
     def finish(self):
-        self.finished_signal.emit()
+        self.finished_signal.emit(0)
+        close_all_tabs(self.driver)
+
+    def interrupt(self):
+        self.finished_signal.emit(1)
         close_all_tabs(self.driver)
     
     def log_ui(self, s):
@@ -150,7 +154,7 @@ class CollectBlogByKeywordThread(NThread):
                 # 검색결과 내 Blog를 순회
                 for author in self.driver.find_elements(By.CSS_SELECTOR, ".writer_info .author"):
                     if self.interrupt_signal:
-                        self.finish()
+                        self.interrupt()
                         return
 
                     blog_id = author.get_attribute("href").split("/")[3]
@@ -209,9 +213,13 @@ class CollectBlogByCategoryThread(NThread):
                     count += 1
 
         if count >= daily_limit:
-            self.log_ui(f'오늘 수집한 블로그가 {daily_limit}개를 넘었습니다.')
+            self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
             self.finish()
             return
+        
+        self.log_ui(f'오늘 수집한 블로그는 {count}개 입니다.')
+        self.set_progress(count/daily_limit)
+        self.log_ui(f'블로그 수집을 시작합니다.')
 
         # 블로그창 열고 카테고리 선택하기
         open_new_window(self.driver)
@@ -222,8 +230,7 @@ class CollectBlogByCategoryThread(NThread):
         main_category_element = WebDriverWait(self.driver, 1000).until(
             EC.element_to_be_clickable((By.XPATH, main_category_xpath))
         )
-        main_category_element.click()
-        rand_sleep(300, 500)
+        click(main_category_element)
         sub_category_css_selector = f".navigator_category_sub [bg-nclick='{SUB_CATEGORIES[self.sub_category]}']"
         sub_category_element = WebDriverWait(self.driver, 1000).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, sub_category_css_selector))
@@ -236,7 +243,7 @@ class CollectBlogByCategoryThread(NThread):
                 # 검색결과 내 Blog를 순회
                 for post_index in range(len(self.driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner"))):
                     if self.interrupt_signal:
-                        self.finish()
+                        self.interrupt()
                         return
 
                     post = self.driver.find_elements(By.CSS_SELECTOR, ".list_post_article .multi_pic .info_post .desc .desc_inner")[post_index]
@@ -248,7 +255,7 @@ class CollectBlogByCategoryThread(NThread):
                     get_page(self.driver, liked_link)
                     for blog_description in self.driver.find_elements(By.CSS_SELECTOR, ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
                         if self.interrupt_signal:
-                            self.finish()
+                            self.interrupt()
                             return                    
                         blog_id = blog_description.get_attribute("href").split("/")[3]
                         # 만약 블로그가 서이추가 가능한 상태면 DB에 추가한다.
@@ -264,11 +271,9 @@ class CollectBlogByCategoryThread(NThread):
                                     count += 1
                                     self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
                                     self.set_progress(count/daily_limit)
-                                self.log_ui(f"지금 카운트는.. {count}")
-                                self.log_ui(f"지금 리미트는.. {daily_limit}")
                                 
                                 if count >= daily_limit:
-                                    self.log_ui("오늘 100명을 모두 수집했습니다.")
+                                    self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
                                     self.finish()
                                     return
                         except Exception as e:
@@ -285,7 +290,7 @@ class CollectBlogByCategoryThread(NThread):
                 page_next_button = self.driver.find_element(By.CSS_SELECTOR, ".pagination .button_next")
                 click(page_next_button)
             except NoSuchElementException as e:
-                logging.getLogger("main").info("카테고리의 모든 글을 탐색했습니다.")
+                self.log_ui("카테고리의 모든 글을 탐색했습니다.")
                 break
 
 class NeighborRequestThread(QThread):

@@ -181,31 +181,39 @@ class BlogManagerApp(QMainWindow):
         self.label_run:QLabel
         self.label_run.setText(s)
 
-    def after_collect_by_keyword(self):
-        self.log_to_ui_logger("블로그 수집을 완료했습니다.")
-        time.sleep(1)
-        self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
+    def after_collect_by_keyword(self, status):
+        if status == 0:
+            self.log_to_ui_logger("블로그 수집을 완료했습니다.")
+            time.sleep(1)
+            self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
 
-        neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
-        self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
-        neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
-        neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
-        neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
-        neighbor_post_collect_thread.start()
-        time.sleep(1)
+            neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
+            self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+            neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
+            neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
+            neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
+            neighbor_post_collect_thread.start()
+            time.sleep(1)
+
+        if status == 1:
+            self.log_to_ui_logger("블로그 수집을 중지했습니다.")
         
-    def after_collect_by_category(self):
-        self.log_to_ui_logger("블로그 수집을 완료했습니다.")
-        time.sleep(1)
-        self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
+    def after_collect_by_category(self, status):
+        if status == 0:
+            self.log_to_ui_logger("블로그 수집을 완료했습니다.")
+            time.sleep(1)
+            self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
 
-        neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
-        self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
-        neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
-        neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
-        neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
-        neighbor_post_collect_thread.start()
-        time.sleep(1)
+            neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
+            self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+            neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
+            neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
+            neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
+            neighbor_post_collect_thread.start()
+            time.sleep(1)
+        
+        if status == 1:
+            self.log_to_ui_logger("블로그 수집을 중지했습니다.")
 
     def log_to_ui_logger(self, s):
         self.plainTextEdit_run: QPlainTextEdit
@@ -230,7 +238,7 @@ class BlogManagerApp(QMainWindow):
             self.comboBox_subCategory.addItems(["All"])
     
     def stop_all_thread(self):
-        for key, value in self.thread_dict.items():
+        for _, value in self.thread_dict.items():
             value.interrupt_signal = True
 
 
