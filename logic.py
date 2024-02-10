@@ -352,12 +352,13 @@ class NeighborRequestThread(QThread):
                                 request_count += 1
                         except Exception as e:
                             pass
-        close_all_tabs(self.driver)
+        close_current_window(self.driver)
         self.finished_signal.emit()
 
 class NeighborPostCollectThread(QThread):
     finished_signal = pyqtSignal()
-    log_signal = pyqtSignal()
+    log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(float)
     interrupt_signal = False
 
     def __init__(self, driver, db_name, parent=None):
@@ -371,7 +372,10 @@ class NeighborPostCollectThread(QThread):
         time.sleep(1)
         all_posts = db_manager.get_all_blog_posts()
 
+        self.log_signal.emit(f'포스트 수집을 시작합니다.')
+
         for blog in all_blogs:
+
             filtered_posts = [
                 post for post in all_posts
                 if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id")
@@ -381,6 +385,11 @@ class NeighborPostCollectThread(QThread):
             url = f"https://m.blog.naver.com/{blog['blog_id']}"
             get_page(self.driver, url)
             time.sleep(2)
+
+            count = 0
+            time.sleep(1)
+            if count == 0:
+                break
 
             current_number = 1
 
@@ -427,7 +436,7 @@ class NeighborPostCollectThread(QThread):
                         print(post_title)
                         print(post_content)
                         db_manager.insert_blog_post(blog["blog_id"], extracted_part, post_title, post_content)
-                        print("db 넣기 완료")
+                        self.log_signal.emit(f"{blog['blog_id']} 블로그의 포스터를 수집했습니다")
                         break
 
                     else:
@@ -435,12 +444,13 @@ class NeighborPostCollectThread(QThread):
             except:
                 print('글 없음')
                 continue
-        close_all_tabs(self.driver)
+        self.log_signal.emit(f"모든 블로그의 포스터 수집을 완료했습니다.")
         self.finished_signal.emit()
 
 class NeighborPostCommentLikeThread(QThread):
     finished_signal = pyqtSignal()
-    log_signal = pyqtSignal()
+    log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(float)
     interrupt_signal = False
 
     def __init__(self, driver, comment, db_name, parent=None):
@@ -450,6 +460,9 @@ class NeighborPostCommentLikeThread(QThread):
         self.db_name = db_name
     # 포스트 글이 얼마 없는 사람들은 특정 플래그로 바로 이웃신청을 할 수 있도록 세팅해줘야함
     def run(self):
+
+        self.log_signal.emit(f'좋아요, 댓글작업을 시작합니다.')
+
         db_manager = DbManager(self.db_name)
         all_blogs = db_manager.get_all_blogs()
         all_posts = db_manager.get_all_blog_posts()
@@ -488,6 +501,9 @@ class NeighborPostCommentLikeThread(QThread):
                                 rand_sleep(450, 550)
                                 blog['like_count'] += 1
                                 post['is_liked'] = 1
+
+                                self.log_signal.emit(f"{blog['blog_id']} 블로그의 포스터에 좋아요를 눌렀습니다.")
+
                             else:
                                 pass
                         except Exception:
@@ -511,9 +527,8 @@ class NeighborPostCommentLikeThread(QThread):
                             comment_input = self.driver.find_element(By.CSS_SELECTOR, '#naverComment__write_textarea')
                             click(comment_input)
                             time.sleep(1)
-                            comment = "안녕하세요~ 좋은 글 잘 읽었습니다!!"
 
-                            comment_input.send_keys(comment)  # 원하는 댓글 내용으로 수정
+                            comment_input.send_keys(self.comment)  # 원하는 댓글 내용으로 수정
 
                             # 댓글 작성 버튼을 찾아서 클릭
                             rand_sleep(450, 550)
@@ -523,9 +538,9 @@ class NeighborPostCommentLikeThread(QThread):
                             time.sleep(1)
                             comment_button.click()
                             blog['comment_count'] += 1
-                            post['written_comment'] = comment
+                            post['written_comment'] = self.comment
                             # 댓글 작성 완료 메시지 출력
-                            print("댓글을 작성했습니다.")
+                            self.log_signal.emit(f"{blog['blog_id']} 블로그의 포스터에 댓글을 작성했습니다.")
                             time.sleep(1)
                             db_manager.update_blog(blog)
                             db_manager.update_post(post)
@@ -545,7 +560,8 @@ class NeighborPostCommentLikeThread(QThread):
                     continue
                 else:
                     continue
-        close_all_tabs(self.driver)
+        self.log_signal.emit(f"모든 블로그에 좋아요, 댓글작업을 완료했습니다.")
+        close_current_window(self.driver)
         self.finished_signal.emit()
 
 
