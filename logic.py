@@ -379,9 +379,39 @@ class NeighborPostCollectThread(QThread):
         time.sleep(1)
         all_posts = db_manager.get_all_blog_posts()
 
-        self.log_signal.emit(f'포스트 수집을 시작합니다.')
+        count = 0
+        daily_limit = 0
+        today = datetime.now().date()
 
+        if all_blogs:
+            daily_limit += 1
+
+        if all_posts:
+            for post in all_posts:
+                post_date = datetime.strptime(post['created_date'], "%Y-%m-%d %H:%M:%S").date()
+                if today == post_date:
+                    count += 1
+
+        rand_sleep(3000, 5000)
+        if count >= daily_limit:
+            self.log_signal.emit('포스트 수집을 이미 완료했습니다.')
+            close_all_tabs(self.driver)
+            return
+
+        self.log_signal.emit(f'오늘 수집한 블로그 포스트는 {count}개 입니다.~')
+        self.progress_signal.emit(count / daily_limit)
+        self.log_signal.emit(f'블로그 수집을 시작합니다!')
+
+        open_new_window(self.driver)
+
+        self.log_signal.emit(f'포스트 수집을 시작합니다.')
+        rand_sleep(3000, 5000)
         for blog in all_blogs:
+            self.progress_signal.emit(count / daily_limit)
+            if count >= daily_limit:
+                self.log_signal.emit('포스트 수집을 이미 완료했습니다.')
+                close_all_tabs(self.driver)
+                return
 
             filtered_posts = [
                 post for post in all_posts
@@ -443,13 +473,15 @@ class NeighborPostCollectThread(QThread):
                         print(post_title)
                         print(post_content)
                         db_manager.insert_blog_post(blog["blog_id"], extracted_part, post_title, post_content)
-                        self.log_signal.emit(f"{blog['blog_id']} 블로그의 포스터를 수집했습니다")
+                        count += 1
+                        self.log_signal.emit(f"{blog['blog_id']} 블로그를 수집했습니다... ({count}/{daily_limit})")
                         break
 
                     else:
                         print("Pattern not found.")
             except:
-                print('글 없음')
+                count += 1
+                self.log_signal.emit(f"글이 없어서 자동으로 count를 올립니다. ({count}/{daily_limit})")
                 continue
         self.log_signal.emit(f"모든 블로그의 포스터 수집을 완료했습니다.")
         self.finished_signal.emit()
@@ -474,14 +506,41 @@ class NeighborPostCommentLikeThread(QThread):
         all_blogs = db_manager.get_all_blogs()
         all_posts = db_manager.get_all_blog_posts()
 
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.now().date()
+
+        count = 0
+        daily_limit = 0
+
+        for post in all_posts:
+            post_date = datetime.strptime(post['created_date'], "%Y-%m-%d %H:%M:%S").date()
+            if now == post_date:
+                daily_limit += 1
+
+        if all_posts:
+            for post in all_posts:
+                if post['is_liked'] == 0 and post['written_comment'] is None:
+                    count += 1
+
+        self.progress_signal.emit(count / daily_limit)
+
+        rand_sleep(3000, 5000)
+
+        if count >= daily_limit:
+            self.log_signal.emit('좋아요, 댓글 작업을 이미 완료했습니다.')
+            close_all_tabs(self.driver)
+            return
+
         for blog in all_blogs:
-            if blog["blog_id"] == "pgw031203":
-                continue
+            self.progress_signal.emit(count / daily_limit)
+            if count >= daily_limit:
+                self.log_signal.emit('좋아요, 댓글 작업을 이미 완료했습니다.')
+                close_all_tabs(self.driver)
+                return
+
             filtered_posts = [
                 post for post in all_posts
-                if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id") and post.get(
-                    "is_liked") == 0
+                if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id") and (post.get(
+                    "is_liked") == 0 or post.get("written_comment") is None)
             ]
             if blog["neighbor_request_rmv"] == 1:
                 continue
@@ -553,7 +612,14 @@ class NeighborPostCommentLikeThread(QThread):
                             db_manager.update_post(post)
 
                         except Exception as e:
-                            print(f"An error occurred: {str(e)}")
+                            count += 1
+                            self.log_signal.emit(f"글이 없어서 자동으로 count를 올립니다. ({count}/{daily_limit})")
+                            if post['is_liked'] == 0:
+                                blog['like_count'] += 1
+                                post['is_liked'] = 1
+                            if post['written_comment'] is None:
+                                blog['comment_count'] += 1
+                                post['written_comment'] = self.comment
                             continue
                                 # Handle the error as needed, e.g., logging or additional actions.
                 else:
@@ -588,7 +654,7 @@ def neighbor_request_to_blog(driver, blog_id):
             neighbor_request_message_text_area = driver.find_element(By.CSS_SELECTOR, ".add_msg textarea")
             clear(neighbor_request_message_text_area)
             #이부분에 서이추 메세지 추가해야함!!!
-            neighbor_request_message = "안녕하세요 저희 서이추 해요 ^^"
+            neighbor_request_message = "안녕하세요 저희 서이추 해요 ~"
             key_in(neighbor_request_message_text_area, neighbor_request_message)
             neighbor_request_button = driver.find_element(By.CLASS_NAME, "btn_ok")
             click(neighbor_request_button)
