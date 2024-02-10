@@ -152,7 +152,7 @@ class BlogManagerApp(QMainWindow):
     def build_thread(self, thread, name, finished_function, start = False):
         self.thread_dict[name] = thread
         thread.progress_signal.connect(self.progress_bar_update)
-        thread.log_signal.connect(self.progress_bar_update)
+        thread.log_signal.connect(self.log_to_ui_logger)
         thread.finished_signal.connect(finished_function)
         if start:
             thread.start()
@@ -174,11 +174,9 @@ class BlogManagerApp(QMainWindow):
         neighbor_post_comment_thread.start()
         time.sleep(1)
 
-
     def after_neighbor_post_like_comment(self):
         self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 완료했습니다.")
         time.sleep(1)
-
 
     def set_current_task_text(self, s):
         self.label_run:QLabel
