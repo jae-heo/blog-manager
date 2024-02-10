@@ -122,6 +122,8 @@ class CollectBlogByKeywordThread(QThread):
         if count >= daily_limit:
             # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
             self.log_signal.emit('오늘 수집한 블로그가 100개를 넘었습니다.')
+            self.finished_signal.emit()
+
             close_all_tabs(self.driver)
             return
         
@@ -167,6 +169,7 @@ class CollectBlogByKeywordThread(QThread):
                                 close_all_tabs(self.driver)
                                 self.log_signal.emit("오늘 100명을 모두 수집했습니다.")
                                 self.progress_signal.emit(count/daily_limit)
+                                self.finished_signal.emit()
                                 return
                     except Exception as e:
                         pass
