@@ -130,7 +130,6 @@ class BlogManagerApp(QMainWindow):
         self.plainTextEdit_run: QPlainTextEdit
         self.plainTextEdit_postComment: QPlainTextEdit
 
-        text = self.plainTextEdit_postComment.toPlainText()
 
         if self.radioButton_keyword.isChecked():
             keyword = self.lineEdit_keyword.text()
@@ -150,22 +149,6 @@ class BlogManagerApp(QMainWindow):
                 self.after_collect_by_category,
                 True)
 
-        neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
-        self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
-        neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
-        neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
-        neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
-        neighbor_post_collect_thread.start()
-        time.sleep(1)
-
-        neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
-        self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
-        neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
-        neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
-        neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
-        neighbor_post_comment_thread.start()
-        time.sleep(1)
-
     def build_thread(self, thread, name, finished_function, start = False):
         self.thread_dict[name] = thread
         thread.progress_signal.connect(self.progress_bar_update)
@@ -181,9 +164,19 @@ class BlogManagerApp(QMainWindow):
         time.sleep(1)
         self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
 
+        text = self.plainTextEdit_postComment.toPlainText()
+
+        neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
+        self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
+        neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
+        neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
+        neighbor_post_comment_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
+        neighbor_post_comment_thread.start()
+        time.sleep(1)
+
+
     def after_neighbor_post_like_comment(self):
         self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 완료했습니다.")
-        print("1번")
         time.sleep(1)
 
 
@@ -195,11 +188,27 @@ class BlogManagerApp(QMainWindow):
         self.log_to_ui_logger("블로그 수집을 완료했습니다.")
         time.sleep(1)
         self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
+
+        neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
+        self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+        neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
+        neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
+        neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
+        neighbor_post_collect_thread.start()
+        time.sleep(1)
         
     def after_collect_by_category(self):
         self.log_to_ui_logger("블로그 수집을 완료했습니다.")
         time.sleep(1)
         self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
+
+        neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
+        self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+        neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
+        neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
+        neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
+        neighbor_post_collect_thread.start()
+        time.sleep(1)
 
     def log_to_ui_logger(self, s):
         self.plainTextEdit_run: QPlainTextEdit
