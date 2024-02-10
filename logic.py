@@ -11,7 +11,9 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 from db import DbManager
 from datetime import datetime, timedelta
-class NModule(QThread):
+
+
+class NThread(QThread):
     finished_signal = pyqtSignal()
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
@@ -20,9 +22,13 @@ class NModule(QThread):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-class LoginThread(QThread):
+    def finish(self):
+        self.finished_signal.emit()
+        close_all_tabs(self.driver)
+        return
+
+class LoginThread(NThread):
     finished_signal = pyqtSignal(bool)
-    interrupt_signal = False
 
     def __init__(self, driver, username, password, db_name, parent=None):
         super().__init__(parent)
@@ -49,7 +55,7 @@ class LoginThread(QThread):
             self.finished_signal.emit(False)
         close_all_tabs(self.driver)
     
-class InitializeThread(QThread):
+class InitializeThread(NThread):
     finished_signal = pyqtSignal()
     log_signal = pyqtSignal()
     interrupt_signal = False
@@ -102,12 +108,7 @@ class InitializeThread(QThread):
         close_current_window(self.driver)
         self.finished_signal.emit()
 
-class CollectBlogByKeywordThread(QThread):
-    finished_signal = pyqtSignal()
-    log_signal = pyqtSignal(str)
-    progress_signal = pyqtSignal(float)
-    interrupt_signal = False
-
+class CollectBlogByKeywordThread(NThread):
     def __init__(self, driver, search_keyword, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -127,10 +128,8 @@ class CollectBlogByKeywordThread(QThread):
                 if today == blog_date:
                     count += 1
         if count >= daily_limit:
-            # 이곳에서도, 100명을 추가했다고 알림을 보내야함.
             self.log_signal.emit('오늘 수집한 블로그가 100개를 넘었습니다.')
             self.finished_signal.emit()
-
             close_all_tabs(self.driver)
             return
         
