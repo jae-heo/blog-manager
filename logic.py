@@ -241,11 +241,7 @@ class CollectBlogByCategoryThread(NThread):
                 self.log_ui("카테고리의 모든 글을 탐색했습니다.")
                 break
 
-class NeighborRequestThread(QThread):
-    finished_signal = pyqtSignal()
-    log_signal = pyqtSignal()
-    interrupt_signal = False
-
+class NeighborRequestThread(NThread):
     def __init__(self, driver, neighbor_request_message, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -302,11 +298,6 @@ class NeighborRequestThread(QThread):
         self.finished_signal.emit()
 
 class NeighborPostCollectThread(NThread):
-    finished_signal = pyqtSignal()
-    log_signal = pyqtSignal(str)
-    progress_signal = pyqtSignal(float)
-    interrupt_signal = False
-
     def __init__(self, driver, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -338,13 +329,12 @@ class NeighborPostCollectThread(NThread):
 
         rand_sleep(3000, 5000)
         if count >= daily_limit:
-            self.log_signal.emit('포스트 수집을 이미 완료했습니다.')
-            close_all_tabs(self.driver)
+            self.log_ui('포스트 수집을 이미 완료했습니다.')
             self.finish()
             return
 
-        self.log_signal.emit(f'오늘 수집한 블로그 포스트는 {count}개 입니다.~')
-        self.progress_signal.emit(count / daily_limit)
+        self.log_ui(f'오늘 수집한 블로그 포스트는 {count}개 입니다.~')
+        self.set_progress(count / daily_limit)
 
         open_new_window(self.driver)
 
@@ -353,9 +343,8 @@ class NeighborPostCollectThread(NThread):
         for blog in all_blogs:
             self.progress_signal.emit(count / daily_limit)
             if count > daily_limit:
-                print(count)
-                self.log_signal.emit('포스트 수집을 이미 완료했습니다.')
-                close_all_tabs(self.driver)
+                self.log_ui('포스트 수집을 이미 완료했습니다.')
+                self.finish()
                 return
 
             filtered_posts = [
