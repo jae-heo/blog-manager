@@ -157,26 +157,33 @@ class BlogManagerApp(QMainWindow):
             time.sleep(1)
         return thread
 
-    def after_neighbor_post_collect(self):
-        self.log_to_ui_logger("블로그의 포스트 수집을 완료했습니다.")
-        time.sleep(1)
-        self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
+    def after_neighbor_post_collect(self, status):
+        if status == 0:
+            self.log_to_ui_logger("블로그의 포스트 수집을 완료했습니다.")
+            time.sleep(1)
+            self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
 
-        text = self.plainTextEdit_postComment.toPlainText()
+            text = self.plainTextEdit_postComment.toPlainText()
 
-        neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
-        self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
-        self.set_current_task_text("좋아요, 댓글기능 작업중...")
-        neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
-        neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
-        neighbor_post_comment_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
-        neighbor_post_comment_thread.start()
-        time.sleep(1)
+            neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
+            self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
+            self.set_current_task_text("좋아요, 댓글기능 작업중...")
+            neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
+            neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
+            neighbor_post_comment_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
+            neighbor_post_comment_thread.start()
+            time.sleep(1)
 
-    def after_neighbor_post_like_comment(self):
-        self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 완료했습니다.")
-        time.sleep(1)
+        if status == 1:
+            self.log_to_ui_logger("블로그의 포스트 수집이 중지되었습니다.")
 
+    def after_neighbor_post_like_comment(self, status):
+        if status == 0:
+            self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 완료했습니다.")
+            time.sleep(1)
+        if status == 1:
+            self.log_to_ui_logger("좋아요 누르기, 댓글 작성이 중지되었습니다.")
+            
     def set_current_task_text(self, s):
         self.label_run:QLabel
         self.label_run.setText(s)
