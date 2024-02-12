@@ -301,7 +301,7 @@ class NeighborRequestThread(QThread):
         close_current_window(self.driver)
         self.finished_signal.emit()
 
-class NeighborPostCollectThread(QThread):
+class NeighborPostCollectThread(NThread):
     finished_signal = pyqtSignal()
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
@@ -322,24 +322,29 @@ class NeighborPostCollectThread(QThread):
         daily_limit = 0
         today = datetime.now().date()
 
-        if all_blogs:
+        for blog in all_blogs:
             daily_limit += 1
 
         if all_posts:
             for post in all_posts:
+                if post['blog_id'] == "pgw031203":
+                    continue
                 post_date = datetime.strptime(post['created_date'], "%Y-%m-%d %H:%M:%S").date()
                 if today == post_date:
                     count += 1
+
+        print(count)
+        print(daily_limit)
 
         rand_sleep(3000, 5000)
         if count >= daily_limit:
             self.log_signal.emit('포스트 수집을 이미 완료했습니다.')
             close_all_tabs(self.driver)
+            self.finish()
             return
 
         self.log_signal.emit(f'오늘 수집한 블로그 포스트는 {count}개 입니다.~')
         self.progress_signal.emit(count / daily_limit)
-        self.log_signal.emit(f'블로그 수집을 시작합니다!')
 
         open_new_window(self.driver)
 
@@ -347,7 +352,8 @@ class NeighborPostCollectThread(QThread):
         rand_sleep(3000, 5000)
         for blog in all_blogs:
             self.progress_signal.emit(count / daily_limit)
-            if count >= daily_limit:
+            if count > daily_limit:
+                print(count)
                 self.log_signal.emit('포스트 수집을 이미 완료했습니다.')
                 close_all_tabs(self.driver)
                 return
@@ -361,11 +367,6 @@ class NeighborPostCollectThread(QThread):
             url = f"https://m.blog.naver.com/{blog['blog_id']}"
             get_page(self.driver, url)
             time.sleep(2)
-
-            count = 0
-            time.sleep(1)
-            if count == 0:
-                break
 
             current_number = 1
 
@@ -425,7 +426,7 @@ class NeighborPostCollectThread(QThread):
         self.log_signal.emit(f"모든 블로그의 포스터 수집을 완료했습니다.")
         self.finished_signal.emit()
 
-class NeighborPostCommentLikeThread(QThread):
+class NeighborPostCommentLikeThread(NThread):
     finished_signal = pyqtSignal()
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
@@ -457,16 +458,17 @@ class NeighborPostCommentLikeThread(QThread):
 
         if all_posts:
             for post in all_posts:
-                if post['is_liked'] == 0 and post['written_comment'] is None:
+                if post['is_liked'] == 1 and post['written_comment'] is not None:
                     count += 1
 
         self.progress_signal.emit(count / daily_limit)
 
         rand_sleep(3000, 5000)
 
-        if count >= daily_limit:
+        if count > daily_limit:
             self.log_signal.emit('좋아요, 댓글 작업을 이미 완료했습니다.')
             close_all_tabs(self.driver)
+            self.finish()
             return
 
         for blog in all_blogs:

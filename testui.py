@@ -168,6 +168,7 @@ class BlogManagerApp(QMainWindow):
 
         neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
         self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
+        self.set_current_task_text("좋아요, 댓글기능 작업중...")
         neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
         neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
         neighbor_post_comment_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
@@ -190,6 +191,7 @@ class BlogManagerApp(QMainWindow):
 
             neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
             self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+            self.set_current_task_text("포스트 수집중...")
             neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
             neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
             neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
@@ -207,6 +209,7 @@ class BlogManagerApp(QMainWindow):
 
             neighbor_post_collect_thread = NeighborPostCollectThread(self.driver, self.username)
             self.thread_dict['neighbor_post_collect_thread'] = neighbor_post_collect_thread
+            self.set_current_task_text("포스트 수집중...")
             neighbor_post_collect_thread.log_signal.connect(self.log_to_ui_logger)
             neighbor_post_collect_thread.progress_signal.connect(self.progress_bar_update)
             neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)

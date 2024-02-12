@@ -332,10 +332,13 @@ class DbManager:
             return False
 
         sql_insert_blog_post = """
-            INSERT INTO BlogPostTable (blog_id, post_id, post_name, post_body)
-            VALUES (?, ?, ?, ?);
+            INSERT INTO BlogPostTable (blog_id, post_id, post_name, post_body, created_date, updated_date)
+            VALUES (?, ?, ?, ?, ?, ?);
         """
-        self.c.execute(sql_insert_blog_post, (blog_id, post_id, post_name, post_body))
+
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        self.c.execute(sql_insert_blog_post, (blog_id, post_id, post_name, post_body, current_datetime, current_datetime))
         self.con.commit()
         print(f"BlogPost with ID {blog_id} inserted successfully.")
         return True
