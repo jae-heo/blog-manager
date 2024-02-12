@@ -137,8 +137,6 @@ class BlogManagerApp(QMainWindow):
                 'collect_blogs_by_keyword_thread',
                 self.after_collect_by_keyword,
                 True)
-            self.set_current_task_text("블로그 수집중...")
-
         if self.radioButton_category.isChecked():
             main_category = self.comboBox_mainCategory.currentText()
             sub_category = self.comboBox_subCategory.currentText()
@@ -147,7 +145,7 @@ class BlogManagerApp(QMainWindow):
                 'collect_blogs_by_category_thread',
                 self.after_collect_by_category,
                 True)
-            self.set_current_task_text("블로그 수집중...")
+        self.set_current_task_text("블로그 수집중...")
 
     def build_thread(self, thread, name, finished_function, start = False):
         self.thread_dict[name] = thread
