@@ -263,9 +263,12 @@ class NeighborRequestThread(NThread):
                         request_count += 1
 
             for blog in blogs:
-                if self.interrupt_signal or request_count >= 100:
-                        close_all_tabs(self.driver)
-                        return 
+                if self.interrupt_signal:
+                    self.interrupt()
+                    return
+                if request_count >= 100:
+                    self.finish()
+                    return
                 # 현재 이웃신청이 되지 않은 블로그 중
                 if blog["neighbor_request_current"] == 0 and blog["neighbor_request_rmv"] != 1:
                     # 이웃신청 조건이 완료된 경우
@@ -305,29 +308,20 @@ class NeighborPostCollectThread(NThread):
     def run(self):
         db_manager = DbManager(self.db_name)
         all_blogs = db_manager.get_all_blogs()
-        db_manager.insert_blog_post("pgw031203", "test1", "test_name", "test_body")
         time.sleep(1)
         all_posts = db_manager.get_all_blog_posts()
 
         count = 0
-        daily_limit = 0
         today = datetime.now().date()
 
-        for blog in all_blogs:
-            daily_limit += 1
+        daily_limit = len(all_blogs)
 
         if all_posts:
             for post in all_posts:
-                if post['blog_id'] == "pgw031203":
-                    continue
                 post_date = datetime.strptime(post['created_date'], "%Y-%m-%d %H:%M:%S").date()
                 if today == post_date:
                     count += 1
 
-        print(count)
-        print(daily_limit)
-
-        rand_sleep(3000, 5000)
         if count >= daily_limit:
             self.log_ui('포스트 수집을 이미 완료했습니다.')
             self.finish()
@@ -339,20 +333,24 @@ class NeighborPostCollectThread(NThread):
         open_new_window(self.driver)
 
         self.log_signal.emit(f'포스트 수집을 시작합니다.')
-        rand_sleep(3000, 5000)
         for blog in all_blogs:
+            if self.interrupt_signal:
+                self.interrupt()
+                return
             self.progress_signal.emit(count / daily_limit)
             if count > daily_limit:
                 self.log_ui('포스트 수집을 이미 완료했습니다.')
                 self.finish()
                 return
 
-            filtered_posts = [
-                post for post in all_posts
-                if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id")
-            ]
+            if all_posts:
+                filtered_posts = [
+                    post for post in all_posts
+                    if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id")
+                ]
+            else:
+                filtered_posts = []
 
-            time.sleep(1)
             url = f"https://m.blog.naver.com/{blog['blog_id']}"
             get_page(self.driver, url)
             time.sleep(2)
@@ -416,11 +414,6 @@ class NeighborPostCollectThread(NThread):
         self.finished_signal.emit()
 
 class NeighborPostCommentLikeThread(NThread):
-    finished_signal = pyqtSignal()
-    log_signal = pyqtSignal(str)
-    progress_signal = pyqtSignal(float)
-    interrupt_signal = False
-
     def __init__(self, driver, comment, db_name, parent=None):
         super().__init__(parent)
         self.driver = driver
@@ -450,9 +443,9 @@ class NeighborPostCommentLikeThread(NThread):
                 if post['is_liked'] == 1 and post['written_comment'] is not None:
                     count += 1
 
-        self.progress_signal.emit(count / daily_limit)
+        self.set_progress(count / daily_limit)
 
-        rand_sleep(3000, 5000)
+        rand_sleep(300, 500)
 
         if count > daily_limit:
             self.log_signal.emit('좋아요, 댓글 작업을 이미 완료했습니다.')
@@ -461,23 +454,33 @@ class NeighborPostCommentLikeThread(NThread):
             return
 
         for blog in all_blogs:
-            self.progress_signal.emit(count / daily_limit)
+            if self.interrupt_signal:
+                self.interrupt()
+                return
+            self.set_progress(count / daily_limit)
             if count >= daily_limit:
                 self.log_signal.emit('좋아요, 댓글 작업을 이미 완료했습니다.')
                 close_all_tabs(self.driver)
                 return
 
-            filtered_posts = [
-                post for post in all_posts
-                if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id") and (post.get(
-                    "is_liked") == 0 or post.get("written_comment") is None)
-            ]
+            if all_posts:
+                filtered_posts = [
+                    post for post in all_posts
+                    if post and post.get("blog_id") is not None and post.get("blog_id") == blog.get("blog_id") and (post.get(
+                        "is_liked") == 0 or post.get("written_comment") is None)
+                ]
+            else:
+                filtered_posts = []
+
             if blog["neighbor_request_rmv"] == 1:
                 continue
             blog_url = f"https://m.blog.naver.com/{blog['blog_id']}"
             if blog["neighbor_request_current"] == 0:
                 if blog["like_count"] < 5 and blog["comment_count"] < 5:
                     for post in filtered_posts:
+                        if self.interrupt_signal:
+                            self.interrupt()
+                            return
                         post_url = blog_url + '/' + post['post_id']
                         get_page(self.driver, post_url)
                         time.sleep(1)
@@ -537,6 +540,7 @@ class NeighborPostCommentLikeThread(NThread):
                             post['written_comment'] = self.comment
                             # 댓글 작성 완료 메시지 출력
                             self.log_signal.emit(f"{blog['blog_id']} 블로그의 포스터에 댓글을 작성했습니다.")
+
                             time.sleep(1)
                             db_manager.update_blog(blog)
                             db_manager.update_post(post)
@@ -552,6 +556,8 @@ class NeighborPostCommentLikeThread(NThread):
                                 post['written_comment'] = self.comment
                             continue
                                 # Handle the error as needed, e.g., logging or additional actions.
+                        if post['is_liked'] == 1 and post['written_comment'] is not None:
+                            count += 1
                 else:
                     continue
             else:
