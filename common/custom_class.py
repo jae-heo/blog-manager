@@ -33,6 +33,8 @@ class NMainWindow(QMainWindow):
     thread_dict = {}
 
     def __init__(self, mode:str):
+        super().__init__()
+
         self.mode = mode
 
         self.tab_main: QTabWidget
