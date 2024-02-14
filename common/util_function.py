@@ -1,15 +1,13 @@
 import random
-import time
 import pyperclip
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtTest import *
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from const import *
+from common.const import *
 
 def rand_sleep(min = 1300, max = 2000):
     QTest.qWait(random.randint(1300, 2000))

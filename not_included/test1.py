@@ -2,8 +2,8 @@ import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from const import DEV_ID, NAVER_LOGIN_URL, DEV_PW
-from custom_func import key_in, click, get_page, rand_sleep
+from common.const import DEV_ID, NAVER_LOGIN_URL, DEV_PW
+from common.util_function import key_in, click, get_page, rand_sleep
 
 
 def today_neighbor_request_current(driver):

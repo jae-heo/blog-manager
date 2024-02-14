@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from selenium.webdriver import ActionChains
 
-from logic import *
+from controller.logic import *
 from gensim.summarization.summarizer import summarize
 from bs4 import BeautifulSoup
 import requests
@@ -14,7 +14,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import requests
 from collections import defaultdict
-from custom_func import get_chrome_driver, get_page
+from common.util_function import get_chrome_driver, get_page
 from PyQt5.QtCore import QThread, pyqtSignal
 
 # Function to fetch URLs and keywords from Naver based on a search quer
