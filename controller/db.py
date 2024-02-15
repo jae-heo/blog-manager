@@ -56,8 +56,8 @@ class DbManager:
                         post_body TEXT NOT NULL,
                         written_comment TEXT,
                         is_liked BOOLEAN INTEGER DEFAULT 0 NOT NULL,
-                        created_date DATE DEFAULT CURRENT_DATE NOT NULL,
-                        updated_date DATE DEFAULT CURRENT_DATE NOT NULL
+                        created_date DATE NOT NULL,
+                        updated_date DATE NOT NULL
                     );
                 """
         self.c.execute(sql_blog_post_table)
