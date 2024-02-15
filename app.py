@@ -128,7 +128,7 @@ class BlogManagerApp(NMainWindow):
     def after_neighbor_post_collect(self, status):
         if status == 0:
             self.log_to_ui_logger("블로그의 포스트 수집을 완료했습니다.")
-            time.sleep(1)
+            rand_sleep(450,550)
             self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
 
             text = self.plainTextEdit_postComment.toPlainText()

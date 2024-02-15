@@ -376,7 +376,7 @@ class NeighborPostCollectThread(NThread):
                         print(post_content)
                         db_manager.insert_blog_post(blog["blog_id"], extracted_part, post_title, post_content)
                         count += 1
-                        self.log_signal.emit(f"{blog['blog_id']} 블로그를 수집했습니다... ({count}/{daily_limit})")
+                        self.log_signal.emit(f"{blog['blog_id']} 포스트를 수집했습니다... ({count}/{daily_limit})")
                         break
 
                     else:
@@ -435,7 +435,7 @@ class NeighborPostCommentLikeThread(NThread):
             self.set_progress(count / daily_limit)
             if count >= daily_limit:
                 self.log_signal.emit('좋아요, 댓글 작업을 이미 완료했습니다.')
-                close_all_tabs(self.driver)
+                self.finish()
                 return
 
             if all_posts:
