@@ -46,7 +46,6 @@ class CollectBlogByKeywordThread(NThread):
         db_manager = DbManager(self.db_name)
 
         count = 0
-        daily_limit = 100
         today = datetime.now().date()
         blogs = db_manager.get_all_blogs()
         if blogs:
@@ -54,13 +53,13 @@ class CollectBlogByKeywordThread(NThread):
                 blog_date = datetime.strptime(blog['created_date'], "%Y-%m-%d %H:%M:%S").date()
                 if today == blog_date:
                     count += 1
-        if count >= daily_limit:
-            self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
+        if count >= DAILY_LIMIT:
+            self.log_ui(f"오늘 {DAILY_LIMIT}명을 모두 수집했습니다.")
             self.finish()
             return
         
         self.log_ui(f'오늘 수집한 블로그는 {count}개 입니다.')
-        self.set_progress(count/daily_limit)
+        self.set_progress(count/DAILY_LIMIT)
         self.log_ui(f'블로그 수집을 시작합니다.')
 
         open_new_window(self.driver)
@@ -94,10 +93,10 @@ class CollectBlogByKeywordThread(NThread):
                             if db_manager.insert_blog_record_with_id(blog_id):
                                 count += 1
                                 self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
-                                self.set_progress(count/daily_limit)
+                                self.set_progress(count/DAILY_LIMIT)
 
-                            if count >= daily_limit:
-                                self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
+                            if count >= DAILY_LIMIT:
+                                self.log_ui(f"오늘 {DAILY_LIMIT}명을 모두 수집했습니다.")
                                 self.finish()
                                 return
                     except Exception as e:
@@ -126,7 +125,6 @@ class CollectBlogByCategoryThread(NThread):
     def run(self):
         db_manager = DbManager(self.db_name)
         count = 0
-        daily_limit = 100
         today = datetime.now().date()
         blogs = db_manager.get_all_blogs()
         if blogs:
@@ -135,13 +133,13 @@ class CollectBlogByCategoryThread(NThread):
                 if today == blog_date:
                     count += 1
 
-        if count >= daily_limit:
-            self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
+        if count >= DAILY_LIMIT:
+            self.log_ui(f"오늘 {DAILY_LIMIT}명을 모두 수집했습니다.")
             self.finish()
             return
         
         self.log_ui(f'오늘 수집한 블로그는 {count}개 입니다.')
-        self.set_progress(count/daily_limit)
+        self.set_progress(count/DAILY_LIMIT)
         self.log_ui(f'블로그 수집을 시작합니다.')
 
         # 블로그창 열고 카테고리 선택하기
@@ -193,10 +191,10 @@ class CollectBlogByCategoryThread(NThread):
                                 if db_manager.insert_blog_record_with_id(blog_id):
                                     count += 1
                                     self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
-                                    self.set_progress(count/daily_limit)
+                                    self.set_progress(count/DAILY_LIMIT)
                                 
-                                if count >= daily_limit:
-                                    self.log_ui(f"오늘 {daily_limit}명을 모두 수집했습니다.")
+                                if count >= DAILY_LIMIT:
+                                    self.log_ui(f"오늘 {DAILY_LIMIT}명을 모두 수집했습니다.")
                                     self.finish()
                                     return
                         except Exception as e:

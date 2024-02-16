@@ -7,6 +7,8 @@ NAVER_LOGIN_URL = "https://nid.naver.com/nidlogin.login?mode=form&url=https://ww
 DEV_ID = "fuhafuha9"
 DEV_PW = "tofhdl19!"
 
+DAILY_LIMIT = 100
+
 if platform.system() == "Windows":
     PASTE_KEY = Keys.LEFT_CONTROL + 'v'
 elif platform.system() == "Darwin":
