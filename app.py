@@ -128,27 +128,30 @@ class BlogManagerApp(NMainWindow):
     def after_neighbor_post_collect(self, status):
         if status == 0:
             self.log_to_ui_logger("블로그의 포스트 수집을 완료했습니다.")
-            rand_sleep(450,550)
-            self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
-
-            text = self.plainTextEdit_postComment.toPlainText()
-
-            neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
-            self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
-            self.set_current_task_text("좋아요, 댓글기능 작업중...")
-            neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
-            neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
-            neighbor_post_comment_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
-            neighbor_post_comment_thread.start()
-            time.sleep(1)
+            self.neighbor_post_like_comment()
 
         if status == 1:
             self.log_to_ui_logger("블로그의 포스트 수집이 중지되었습니다.")
+
+    def neighbor_post_like_comment(self):
+        self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
+
+        text = self.plainTextEdit_postComment.toPlainText()
+
+        neighbor_post_comment_thread = NeighborPostCommentLikeThread(self.driver, text, self.username)
+        self.thread_dict['neighbor_post_comment_thread'] = neighbor_post_comment_thread
+        self.set_current_task_text("좋아요, 댓글기능 작업중...")
+        neighbor_post_comment_thread.progress_signal.connect(self.progress_bar_update)
+        neighbor_post_comment_thread.log_signal.connect(self.log_to_ui_logger)
+        neighbor_post_comment_thread.finished_signal.connect(self.after_neighbor_post_like_comment)
+        neighbor_post_comment_thread.start()
+        time.sleep(1)
 
     def after_neighbor_post_like_comment(self, status):
         if status == 0:
             self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 완료했습니다.")
             time.sleep(1)
+            show_message(self, "오늘의 할일을 전부 완료했습니다. 내일 다시 실행해주세요.")
         if status == 1:
             self.log_to_ui_logger("좋아요 누르기, 댓글 작성이 중지되었습니다.")
             

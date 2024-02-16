@@ -281,7 +281,6 @@ class NeighborPostCollectThread(NThread):
     def run(self):
         db_manager = DbManager(self.db_name)
         all_blogs = db_manager.get_all_blogs()
-        time.sleep(1)
         all_posts = db_manager.get_all_blog_posts()
 
         count = 0
@@ -326,7 +325,6 @@ class NeighborPostCollectThread(NThread):
 
             url = f"https://m.blog.naver.com/{blog['blog_id']}"
             get_page(self.driver, url)
-            time.sleep(2)
 
             current_number = 1
 
@@ -334,20 +332,15 @@ class NeighborPostCollectThread(NThread):
                 button = self.driver.find_element(By.CSS_SELECTOR,
                                              '#contentslist_block > div > div > div > button:nth-child(2)')
                 click(button)
-                time.sleep(1)
                 while True:
                     selector = f'#contentslist_block > div > div > div:nth-child(2) > ul > li:nth-child({current_number})'
                     selector_title = f'{selector} > div > a > div > strong > span > span'
-                    time.sleep(1)
                     selector_content = f'{selector} > div > a > div > p > span > span'
-                    time.sleep(1)
 
                     post_title = self.driver.find_element(By.CSS_SELECTOR, selector_title).text
                     post_content = self.driver.find_element(By.CSS_SELECTOR, selector_content).text
                     if post_content == "":
                         post_content = "Post Content is None"
-                    time.sleep(1)
-
                     latest_post = self.driver.find_element(By.CSS_SELECTOR, selector)
                     # Extract the URL of the latest post
                     latest_post_url = latest_post.find_element(By.TAG_NAME, "a").get_attribute("href")
@@ -357,10 +350,8 @@ class NeighborPostCollectThread(NThread):
 
                     # Find the index of '?' after the last '/'
                     question_mark_index = latest_post_url.find('?', last_slash_index)
-                    time.sleep(1)
                     if last_slash_index != -1 and question_mark_index != -1:
                         extracted_part = latest_post_url[last_slash_index + 1:question_mark_index]
-                        time.sleep(1)
                         continue_flag = False
                         for post in filtered_posts:
                             if post["post_id"] == extracted_part:
@@ -456,20 +447,16 @@ class NeighborPostCommentLikeThread(NThread):
                             return
                         post_url = blog_url + '/' + post['post_id']
                         get_page(self.driver, post_url)
-                        time.sleep(1)
                         # 좋아요 버튼 확인
                         try:
-                            time.sleep(1)
                             is_liked = self.driver.find_element(By.CSS_SELECTOR,
                                                            "#body > div.floating_menu > div > div.btn_like_w > div > div > a").get_attribute(
                                 'aria-pressed')  # 좋아요 버튼 상태 확인
                             print(is_liked)
-                            time.sleep(1)
                             if is_liked == "false":
                                 like_button = self.driver.find_element(By.CSS_SELECTOR,
                                                                   '#body > div.floating_menu > div > div.btn_like_w > div > div > a')
                                 click(like_button)
-                                time.sleep(1)
                                 rand_sleep(450, 550)
                                 blog['like_count'] += 1
                                 post['is_liked'] = 1
@@ -493,26 +480,21 @@ class NeighborPostCommentLikeThread(NThread):
                             comment_input_1 = self.driver.find_element(By.CSS_SELECTOR,
                                                                   '#naverComment > div > div.u_cbox_write_wrap > div.u_cbox_write_box.u_cbox_type_logged_in > form > fieldset > div > div > div.u_cbox_write_area > div > label')
                             click(comment_input_1)
-                            time.sleep(1)
                             comment_input = self.driver.find_element(By.CSS_SELECTOR, '#naverComment__write_textarea')
                             click(comment_input)
-                            time.sleep(1)
 
                             comment_input.send_keys(self.comment)  # 원하는 댓글 내용으로 수정
 
                             # 댓글 작성 버튼을 찾아서 클릭
                             rand_sleep(450, 550)
-                            time.sleep(1)
                             comment_button = self.driver.find_element(By.CSS_SELECTOR,
                                                                  '#naverComment > div > div.u_cbox_write_wrap > div.u_cbox_write_box.u_cbox_type_logged_in > form > fieldset > div > div > div.u_cbox_upload > button')
-                            time.sleep(1)
                             comment_button.click()
                             blog['comment_count'] += 1
                             post['written_comment'] = self.comment
                             # 댓글 작성 완료 메시지 출력
                             self.log_signal.emit(f"{blog['blog_id']} 블로그의 포스터에 댓글을 작성했습니다.")
 
-                            time.sleep(1)
                             db_manager.update_blog(blog)
                             db_manager.update_post(post)
 
@@ -525,6 +507,8 @@ class NeighborPostCommentLikeThread(NThread):
                             if post['written_comment'] is None:
                                 blog['comment_count'] += 1
                                 post['written_comment'] = self.comment
+                            db_manager.update_blog(blog)
+                            db_manager.update_post(post)
                             continue
                                 # Handle the error as needed, e.g., logging or additional actions.
                         if post['is_liked'] == 1 and post['written_comment'] is not None:
@@ -541,4 +525,5 @@ class NeighborPostCommentLikeThread(NThread):
                 else:
                     continue
         self.log_signal.emit(f"모든 블로그에 좋아요, 댓글작업을 완료했습니다.")
+        self.set_progress(count / daily_limit)
         self.finish()
