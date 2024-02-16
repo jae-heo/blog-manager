@@ -386,7 +386,7 @@ class NeighborPostCollectThread(NThread):
                 self.log_signal.emit(f"글이 없어서 자동으로 count를 올립니다. ({count}/{daily_limit})")
                 continue
         self.log_signal.emit(f"모든 블로그의 포스터 수집을 완료했습니다.")
-        self.finished_signal.emit()
+        self.finish()
 
 class NeighborPostCommentLikeThread(NThread):
     def __init__(self, driver, comment, db_name, parent=None):
@@ -483,16 +483,14 @@ class NeighborPostCommentLikeThread(NThread):
                         except Exception:
                             # print('공감 버튼 없음')
                             pass
-                        time.sleep(1)
                         # 댓글 확인
                         try:
                             if post['written_comment'] is not None:
                                 continue
-                            time.sleep(1)
                             comment_button = self.driver.find_element(By.CSS_SELECTOR,
                                                                  '#body > div.floating_menu > div > div.btn_r > a.btn_reply')
                             click(comment_button)
-                            time.sleep(4)
+                            rand_sleep(3500, 4000)
                             # 댓글 입력란을 찾아서 내용 입력
                             comment_input_1 = self.driver.find_element(By.CSS_SELECTOR,
                                                                   '#naverComment > div > div.u_cbox_write_wrap > div.u_cbox_write_box.u_cbox_type_logged_in > form > fieldset > div > div > div.u_cbox_write_area > div > label')
@@ -545,5 +543,4 @@ class NeighborPostCommentLikeThread(NThread):
                 else:
                     continue
         self.log_signal.emit(f"모든 블로그에 좋아요, 댓글작업을 완료했습니다.")
-        close_current_window(self.driver)
-        self.finished_signal.emit()
+        self.finish()
