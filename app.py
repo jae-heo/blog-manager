@@ -150,10 +150,30 @@ class BlogManagerApp(NMainWindow):
     def after_neighbor_post_like_comment(self, status):
         if status == 0:
             self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 완료했습니다.")
-            time.sleep(1)
-            show_message(self, "오늘의 할일을 전부 완료했습니다. 내일 다시 실행해주세요.")
+            self.neighbor_request()
         if status == 1:
             self.log_to_ui_logger("좋아요 누르기, 댓글 작성이 중지되었습니다.")
+
+    def neighbor_request(self):
+        self.log_to_ui_logger("이웃 신청을 시작하겠습니다.")
+
+        request_message = self.plainTextEdit_requestMessage.toPlainText()
+        neighbor_request_thread = NeighborRequestThread(self.driver, request_message, self.username)
+        self.thread_dict['neighbor_request_thread'] = neighbor_request_thread
+        self.set_current_task_text("이웃 신청 작업중...")
+        neighbor_request_thread.progress_signal.connect(self.progress_bar_update)
+        neighbor_request_thread.log_signal.connect(self.log_to_ui_logger)
+        neighbor_request_thread.finished_signal.connect(self.after_neighbor_request)
+        neighbor_request_thread.start()
+        time.sleep(1)
+
+    def after_neighbor_request(self, status):
+        if status == 0:
+            self.log_to_ui_logger("이웃 신청을 완료했습니다.")
+            show_message(self, "프로그램이 끝났습니다. 내일 다시 실행해주세요.")
+            
+        if status == 1:
+            self.log_to_ui_logger("이웃 신청이 중지되었습니다.")
             
     def set_current_task_text(self, s):
         self.label_run.setText(s)

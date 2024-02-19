@@ -57,7 +57,10 @@ def close_all_tabs(driver):
     for handle in all_handles:
         if handle != driver.current_window_handle:
             driver.switch_to.window(handle)
-            driver.close()
+            try:
+                driver.close()
+            except:
+                continue
             driver.switch_to.window(tabs[-1])
 
 def show_message(program, message):

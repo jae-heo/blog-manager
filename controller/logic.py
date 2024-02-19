@@ -245,7 +245,7 @@ class NeighborRequestThread(NThread):
                 # 현재 이웃신청이 되지 않은 블로그 중
                 if blog["neighbor_request_current"] == 0 and blog["neighbor_request_rmv"] != 1:
                     # 이웃신청 조건이 완료된 경우
-                    if blog["like_count"] >= 5 and blog["comment_count"] >= 5:
+                    if blog["like_count"] >= 1 and blog["comment_count"] >= 1:
                         blog_url = "https://m.blog.naver.com/" + blog['blog_id']
                         open_new_window(self.driver)
                         get_page(self.driver, blog_url)
@@ -270,8 +270,7 @@ class NeighborRequestThread(NThread):
                                 request_count += 1
                         except Exception as e:
                             pass
-        close_current_window(self.driver)
-        self.finished_signal.emit()
+        self.finish()
 
 class NeighborPostCollectThread(NThread):
     def __init__(self, driver, db_name, parent=None):
