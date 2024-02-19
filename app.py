@@ -6,12 +6,16 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtTest import *
 import argparse
 from common.custom_class import NMainWindow
+from ui.blog_manager import Ui_MainWindow
 
-class BlogManagerApp(NMainWindow):
+class BlogManagerApp(NMainWindow, Ui_MainWindow):
+# class BlogManagerApp(NMainWindow):
     def __init__(self, mode):
         super().__init__(mode)
-        loadUi("ui/blog_manager.ui", self)
-        
+        # loadUi("ui/blog_manager.ui", self)
+        # ui_initializer = Ui_MainWindow()
+        # ui_initializer.setupUi(self)
+        self.setupUi(self)
         self.driver = get_chrome_driver()
 
         self.pushButton_login.clicked.connect(self.login)
