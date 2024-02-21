@@ -323,6 +323,12 @@ class NeighborPostCollectThread(NThread):
             else:
                 filtered_posts = []
 
+            if filtered_posts:
+                for post in filtered_posts:
+                    if post['created_date'] == today:
+                        self.log_signal.emit(f"{blog['blog_id']}의 포스터는 이미 오늘 수집했습니다.")
+                        continue
+
             url = f"https://m.blog.naver.com/{blog['blog_id']}"
             get_page(self.driver, url)
 
@@ -374,6 +380,7 @@ class NeighborPostCollectThread(NThread):
                 count += 1
                 self.log_signal.emit(f"글이 없어서 자동으로 count를 올립니다. ({count}/{daily_limit})")
                 continue
+        self.set_progress(count / daily_limit)
         self.log_signal.emit(f"모든 블로그의 포스터 수집을 완료했습니다.")
         self.finish()
 
