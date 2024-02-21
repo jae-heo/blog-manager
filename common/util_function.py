@@ -10,7 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from common.const import *
 
 def rand_sleep(min = 1300, max = 2000):
-    QTest.qWait(random.randint(1300, 2000))
+    QTest.qWait(random.randint(min, max))
 
 def empty(s: str):
     return True if len(s) == 0 else False
@@ -38,6 +38,7 @@ def get_page(driver, url):
 def key_in(element, text):
     pyperclip.copy(text)
     element.send_keys(PASTE_KEY)
+    pyperclip.copy("")
     rand_sleep()
 
 def clear(element):

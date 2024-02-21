@@ -7,6 +7,10 @@ from PyQt5.QtTest import *
 import argparse
 from common.custom_class import NMainWindow
 from ui.blog_manager import Ui_MainWindow
+import requests
+
+license_server_ip = "http://3.35.102.165:8000"
+headers = {"secret_code": "onyubabo"}
 
 class BlogManagerApp(NMainWindow, Ui_MainWindow):
 # class BlogManagerApp(NMainWindow):
@@ -86,6 +90,17 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
             self.pushButton_login.setDisabled(False)
 
     def run_main(self):
+        response = requests.get(f"{license_server_ip}/licenses/{self.username}", headers=headers)
+        if response.status_code != 200:
+            show_message(self, "라이센스가 없습니다. 프로그램을 종료합니다.")
+            QApplication.instance().quit()
+        else:
+            expiration_date = datetime.strptime(response.json()["expiration_date"], '%Y-%m-%dT%H:%M:%S.%f')
+            current_date = datetime.now()
+            if expiration_date < current_date:
+                show_message(self, "라이센스가 만료되었습니다. 프로그램을 종료합니다.")
+                QApplication.instance().quit()
+
         if not (self.radioButton_category.isChecked() or self.radioButton_keyword.isChecked()):
             show_message(self, "블로그 아이디 수집방법을 선택해주세요.")
             return
@@ -136,6 +151,7 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
 
         if status == 1:
             self.log_to_ui_logger("블로그의 포스트 수집이 중지되었습니다.")
+            self.after_interrupt()
 
     def neighbor_post_like_comment(self):
         self.log_to_ui_logger("좋아요 누르기, 댓글 작성을 시작하겠습니다.")
@@ -157,6 +173,7 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
             self.neighbor_request()
         if status == 1:
             self.log_to_ui_logger("좋아요 누르기, 댓글 작성이 중지되었습니다.")
+            self.after_interrupt()
 
     def neighbor_request(self):
         self.log_to_ui_logger("이웃 신청을 시작하겠습니다.")
@@ -174,10 +191,14 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
     def after_neighbor_request(self, status):
         if status == 0:
             self.log_to_ui_logger("이웃 신청을 완료했습니다.")
+            self.set_current_task_text("완료")
+            self.set_current_task_text("완료")
+            
             show_message(self, "프로그램이 끝났습니다. 내일 다시 실행해주세요.")
             
         if status == 1:
             self.log_to_ui_logger("이웃 신청이 중지되었습니다.")
+            self.after_interrupt()
             
     def set_current_task_text(self, s):
         self.label_run.setText(s)
@@ -189,6 +210,7 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
 
         if status == 1:
             self.log_to_ui_logger("블로그 수집을 중지했습니다.")
+            self.after_interrupt()
         
     def after_collect_by_category(self, status):
         if status == 0:
@@ -196,6 +218,7 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
             self.collect_neighbor_post()
         if status == 1:
             self.log_to_ui_logger("블로그 수집을 중지했습니다.")
+            self.after_interrupt()
 
     def collect_neighbor_post(self):
         self.log_to_ui_logger("포스트 수집을 시작하겠습니다.")
@@ -208,6 +231,19 @@ class BlogManagerApp(NMainWindow, Ui_MainWindow):
         neighbor_post_collect_thread.finished_signal.connect(self.after_neighbor_post_collect)
         neighbor_post_collect_thread.start()
         time.sleep(1)
+
+    def after_interrupt(self):
+        self.comboBox_mainCategory.setDisabled(False)
+        self.comboBox_subCategory.setDisabled(False)
+        self.lineEdit_keyword.setDisabled(False)
+        self.radioButton_category.setDisabled(False)
+        self.radioButton_keyword.setDisabled(False)
+        self.plainTextEdit_requestMessage.setDisabled(False)
+        self.pushButton_run.setDisabled(False)
+        self.plainTextEdit_postComment.setDisabled(False)
+        self.tab_main.setCurrentIndex(1)
+        show_message(self, "기능이 중지되었습니다.")
+
 
     def log_to_ui_logger(self, s):
         self.plainTextEdit_run.appendPlainText(f'{s}')

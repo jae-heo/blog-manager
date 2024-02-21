@@ -29,12 +29,12 @@ class LoginThread(NThread):
         login_button = self.driver.find_element(By.XPATH, '//*[@id="log.login"]')
         click(login_button)
         try:
-            self.driver.find_element(By.CSS_SELECTOR, '.MyView-module__desc_email___JwAKa')
+            self.driver.find_element(By.XPATH, "//*[contains(@class, 'desc_email')]")
             self.finished_signal.emit(0)
         except Exception as e:
             self.finished_signal.emit(1)
         close_all_tabs(self.driver)
-    
+
 class CollectBlogByKeywordThread(NThread):
     def __init__(self, driver, search_keyword, db_name, parent=None):
         super().__init__(parent)
@@ -85,14 +85,14 @@ class CollectBlogByKeywordThread(NThread):
                     open_new_window(self.driver)
                     get_page(self.driver, blog_url)
                     try:
-                        add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                        add_neighbor_button = self.driver.find_element(By.XPATH, "//*[contains(@class, 'add_buddy_btn')]")
                         click(add_neighbor_button)
                         both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
                         # 만약 서이추가 가능한 사람일 경우
                         if both_buddy_radio.get_attribute("ng-disabled") == "false":
                             if db_manager.insert_blog_record_with_id(blog_id):
                                 count += 1
-                                self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
+                                self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/{DAILY_LIMIT})")
                                 self.set_progress(count/DAILY_LIMIT)
 
                             if count >= DAILY_LIMIT:
@@ -174,7 +174,7 @@ class CollectBlogByCategoryThread(NThread):
                     liked_link = f'https://m.blog.naver.com/SympathyHistoryList.naver?blogId={blog_id}&logNo={post_id}&categoryId=POST'
                     open_new_window(self.driver)
                     get_page(self.driver, liked_link)
-                    for blog_description in self.driver.find_elements(By.CSS_SELECTOR, ".sympathy_item___b3xy .bloger_area___eCA_ .link__D9GoZ"):
+                    for blog_description in self.driver.find_elements(By.XPATH, "//*[contains(@class, 'sympathy_item')]//*[contains(@class, 'bloger_area')]//*[contains(@class, 'link')]"):
                         if self.interrupt_signal:
                             self.interrupt()
                             return                    
@@ -183,14 +183,14 @@ class CollectBlogByCategoryThread(NThread):
                         open_new_window(self.driver)
                         get_page(self.driver, "https://m.blog.naver.com/" + blog_id)
                         try:
-                            add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                            add_neighbor_button = self.driver.find_element(By.XPATH, "//*[contains(@class, 'add_buddy_btn')]")
                             click(add_neighbor_button)
                             both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
                             # 만약 서이추가 가능한 사람일 경우
                             if both_buddy_radio.get_attribute("ng-disabled") == "false":
                                 if db_manager.insert_blog_record_with_id(blog_id):
                                     count += 1
-                                    self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/100)")
+                                    self.log_ui(f"{blog_id} 블로그를 수집했습니다... ({count}/{DAILY_LIMIT})")
                                     self.set_progress(count/DAILY_LIMIT)
                                 
                                 if count >= DAILY_LIMIT:
@@ -249,7 +249,7 @@ class NeighborRequestThread(NThread):
                         blog_url = "https://m.blog.naver.com/" + blog['blog_id']
                         open_new_window(self.driver)
                         get_page(self.driver, blog_url)
-                        add_neighbor_button = self.driver.find_element(By.CLASS_NAME, "add_buddy_btn__oGR_B")
+                        add_neighbor_button = self.driver.find_element(By.XPATH, "//*[contains(@class, 'add_buddy_btn')]")
                         click(add_neighbor_button)
                         try:
                             both_buddy_radio = self.driver.find_element(By.ID, "bothBuddyRadio")
@@ -268,8 +268,9 @@ class NeighborRequestThread(NThread):
                                 blog["neighbor_request_date"] = now
                                 db_manager.update_blog(blog)
                                 request_count += 1
+                                close_current_window(self.driver)
                         except Exception as e:
-                            pass
+                            close_current_window(self.driver)
         self.finish()
 
 class NeighborPostCollectThread(NThread):
@@ -515,7 +516,7 @@ class NeighborPostCommentLikeThread(NThread):
                 else:
                     continue
             else:
-                if (now - blog["neighbor_request_date"]).days > 7:
+                if (now - datetime.strptime(blog["neighbor_request_date"], "%Y-%m-%d %H:%M:%S").date()).days > 7:
                     # Update neighbor_request_current to False
                     blog["neighbor_request_current"] = 0
                     blog["neighbor_request_rmv"] = 1
@@ -525,4 +526,5 @@ class NeighborPostCommentLikeThread(NThread):
                     continue
         self.log_signal.emit(f"모든 블로그에 좋아요, 댓글작업을 완료했습니다.")
         self.set_progress(count / daily_limit)
-        self.finish()
+        self.finished_signal.emit(0)
+
