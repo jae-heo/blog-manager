@@ -7,7 +7,7 @@ NAVER_LOGIN_URL = "https://nid.naver.com/nidlogin.login?mode=form&url=https://ww
 DEV_ID = "nimbleacumen"
 DEV_PW = "N!mble@cumen"
 
-DAILY_LIMIT = 100
+DAILY_LIMIT = 5
 
 if platform.system() == "Windows":
     PASTE_KEY = Keys.LEFT_CONTROL + 'v'

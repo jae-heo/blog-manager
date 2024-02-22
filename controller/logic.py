@@ -323,11 +323,17 @@ class NeighborPostCollectThread(NThread):
             else:
                 filtered_posts = []
 
+            post_already = 0
+
             if filtered_posts:
                 for post in filtered_posts:
-                    if post['created_date'] == today:
-                        self.log_signal.emit(f"{blog['blog_id']}의 포스터는 이미 오늘 수집했습니다.")
-                        continue
+                    post_date = datetime.strptime(post['created_date'], "%Y-%m-%d %H:%M:%S").date()
+                    if post_date == today:
+                        post_already += 1
+                        break
+
+            if post_already == 1:
+                continue
 
             url = f"https://m.blog.naver.com/{blog['blog_id']}"
             get_page(self.driver, url)
