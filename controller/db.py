@@ -60,6 +60,15 @@ class DbManager:
                         updated_date DATE NOT NULL
                     );
                 """
+
+        sql_blog_gpt_table = """
+                        CREATE TABLE IF NOT EXISTS BlogPostGptTable (
+                        post_name TEXT NOT NULL,
+                        post_body TEXT NOT NULL
+                        post_url TEXT NOT NULL,
+                        created_date DATE NOT NULL,
+                    );
+        """
         self.c.execute(sql_blog_post_table)
 
     # BlogTable 관련 함수
@@ -344,6 +353,29 @@ class DbManager:
         return True
 
 
+    def insert_blog_post_gpt(self, post_name, post_body, post_url):
+        sql_check_duplicate = """
+            SELECT * FROM BlogPostGptTable WHERE post_name = ? AND post_url = ?;
+        """
+        self.c.execute(sql_check_duplicate, (post_name, post_url))
+
+        if self.c.fetchone():
+            print(f"BlogPostGpt with NAME {post_name} and Post URL {post_url} already exists.")
+            return False
+
+        sql_insert_blog_post_gpt = """
+            INSERT INTO BlogPostGptTable (post_name, post_body, post_url, created_date)
+            VALUES (?, ?, ?, ?, ?, ?);
+        """
+
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        self.c.execute(sql_insert_blog_post_gpt, (post_name, post_body, post_url, current_datetime,))
+        self.con.commit()
+        print(f"BlogPostGpt inserted successfully.")
+        return True
+
+
 
     ############################################################################################
 
@@ -391,6 +423,19 @@ class DbManager:
             print("BlogPostTable이 비었습니다.")
         else:
             result = [dict(zip(columns, post)) for post in posts]
+            return result
+
+    def get_all_blog_post_for_gpts(self):
+        self.c.execute("PRAGMA table_info(BlogPostGptTable)")
+        columns = [column[1] for column in self.c.fetchall()]
+
+        self.c.execute("SELECT * FROM BlogPostGptTable")
+        post_gpts = self.c.fetchall()
+
+        if not post_gpts:
+            print("BlogPostGptTable이 비었습니다.")
+        else:
+            result = [dict(zip(columns, post_gpts)) for post_gpt in post_gpts]
             return result
         
     def update_blog(self, blog):
