@@ -224,7 +224,6 @@ class PostSaveThread(QThread):
             {"role": "user", "content": title_and_subtitles + second_subtitle},
             {"role": "user", "content": "write a professional, informative post of 부제목3 from title_and_subtitles using information of the content. write at least 200 words. Do not use 극존칭 as such as '~습니다,' but rather use 존칭 '~해요, ~네요,~죠'.Output in Korean. reply only subtitle and the post response. try not to write information that is already said on 'first_subtitle'. Show only subtitle and the post but do not show as such as'부제목3:' or '포스트:'."},
 
-
           ]
         )
 

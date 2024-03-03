@@ -60,16 +60,19 @@ class DbManager:
                         updated_date DATE NOT NULL
                     );
                 """
+        self.c.execute(sql_blog_post_table)
 
         sql_blog_gpt_table = """
-                        CREATE TABLE IF NOT EXISTS BlogPostGptTable (
+                    CREATE TABLE IF NOT EXISTS BlogPostGptTable (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         post_name TEXT NOT NULL,
-                        post_body TEXT NOT NULL
+                        post_body TEXT NOT NULL,
                         post_url TEXT NOT NULL,
-                        created_date DATE NOT NULL,
+                        created_date DATE NOT NULL
                     );
-        """
-        self.c.execute(sql_blog_post_table)
+                """
+
+        self.c.execute(sql_blog_gpt_table)
 
     # BlogTable 관련 함수
     ############################################################################################
@@ -365,7 +368,7 @@ class DbManager:
 
         sql_insert_blog_post_gpt = """
             INSERT INTO BlogPostGptTable (post_name, post_body, post_url, created_date)
-            VALUES (?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?);
         """
 
         current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -435,7 +438,7 @@ class DbManager:
         if not post_gpts:
             print("BlogPostGptTable이 비었습니다.")
         else:
-            result = [dict(zip(columns, post_gpts)) for post_gpt in post_gpts]
+            result = [dict(zip(columns, post_gpt)) for post_gpt in post_gpts]
             return result
         
     def update_blog(self, blog):
@@ -497,6 +500,29 @@ class DbManager:
             post['created_date'],
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             post['id']
+        ))
+        self.con.commit()
+
+    def update_post_gpt(self, post_gpt):
+
+        sql_query = """
+            UPDATE BlogPostGptTable
+            SET
+                post_name = ?,
+                post_body = ?,
+                post_url = ?,
+                created_date = ?,
+            WHERE
+                id = ?
+        """
+
+        self.c.execute(sql_query, (
+            post_gpt['post_name'],
+            post_gpt['post_body'],
+            post_gpt['post_url'],
+            post_gpt['created_date'],
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            post_gpt['id']
         ))
         self.con.commit()
 
