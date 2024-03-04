@@ -65,9 +65,11 @@ class DbManager:
         sql_blog_gpt_table = """
                     CREATE TABLE IF NOT EXISTS BlogPostGptTable (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        post_subject TEXT NOT NULL,
                         post_name TEXT NOT NULL,
                         post_body TEXT NOT NULL,
                         post_url TEXT NOT NULL,
+                        post_keyword TEXT NOT NULL,
                         created_date DATE NOT NULL
                     );
                 """
@@ -356,7 +358,7 @@ class DbManager:
         return True
 
 
-    def insert_blog_post_gpt(self, post_name, post_body, post_url):
+    def insert_blog_post_gpt(self, post_subject, post_name, post_body, post_url, post_keyword):
         sql_check_duplicate = """
             SELECT * FROM BlogPostGptTable WHERE post_name = ? AND post_url = ?;
         """
@@ -367,13 +369,13 @@ class DbManager:
             return False
 
         sql_insert_blog_post_gpt = """
-            INSERT INTO BlogPostGptTable (post_name, post_body, post_url, created_date)
-            VALUES (?, ?, ?, ?);
+            INSERT INTO BlogPostGptTable (post_subject, post_name, post_body, post_url, post_keyword, created_date)
+            VALUES (?, ?, ?, ?, ?, ?);
         """
 
         current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        self.c.execute(sql_insert_blog_post_gpt, (post_name, post_body, post_url, current_datetime,))
+        self.c.execute(sql_insert_blog_post_gpt, (post_subject, post_name, post_body, post_url, post_keyword, current_datetime,))
         self.con.commit()
         print(f"BlogPostGpt inserted successfully.")
         return True
