@@ -45,7 +45,7 @@ def fetch_urls(search_query):
         title_url_elements = container.select(title_url_selector)
         for element in title_url_elements:
             link = element['href']
-            if 'https://m.blog.naver.com/' in link or 'https://in.naver.com/' in link:
+            if 'https://m.blog.naver.com/' in link or    'https://in.naver.com/' in link:
                 url_data.append((keyword_text, link))
 
     driver.quit()
